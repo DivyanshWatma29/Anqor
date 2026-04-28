@@ -10,3 +10,4 @@ dist
 bun.lock
 bun.lockb
 .code-review-graph/
+\ndocs/
