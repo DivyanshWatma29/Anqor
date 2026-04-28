@@ -1,17 +1,32 @@
+import { useEffect, useMemo, useState } from "react";
 import { m } from "framer-motion";
-import { ArrowRight, Shield, Sparkles, Zap, BarChart3, FileUp, Upload, Users } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, BarChart3, FileUp, Upload, Users, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const features = [
-  { icon: Zap, title: "Real-time Detection", desc: "Sub-second fraud predictions powered by ensemble ML models" },
+  { icon: Zap, title: "Real-time Detection", desc: "Sub-second fraud predictions powered by ML models" },
   { icon: BarChart3, title: "Deep Analytics", desc: "Risk scoring, severity analysis, and trend visualization" },
   { icon: Upload, title: "Document AI", desc: "Upload PDF or image of claims — AI extracts fields automatically" },
   { icon: FileUp, title: "Bulk Processing", desc: "Batch-process hundreds of claims from CSV files in seconds" },
   { icon: Users, title: "No Login Required", desc: "Use all prediction features instantly — sign in only to save history" },
-  { icon: Shield, title: "Enterprise Security", desc: "Row-level security, encrypted data, and InsForge Auth" },
+  { icon: Shield, title: "Secure Platform", desc: "Row-level security, encrypted data, and InsForge Auth" },
 ];
 
 const LandingPage = () => {
+  const [titleNumber, setTitleNumber] = useState(0);
+  const titles = useMemo(() => ["Fraud", "Risk", "Threats", "Losses", "Claims"], []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (titleNumber === titles.length - 1) {
+        setTitleNumber(0);
+      } else {
+        setTitleNumber(titleNumber + 1);
+      }
+    }, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [titleNumber, titles]);
+
   return (
     <div>
       {/* Hero */}
@@ -22,48 +37,63 @@ const LandingPage = () => {
         <div className="glow-orb w-[600px] h-[600px] -bottom-64 -left-64 bg-[hsl(var(--glow-purple))] opacity-[0.05] animate-float" />
         <div className="glow-orb w-[300px] h-[300px] top-1/3 right-1/4 bg-[hsl(var(--glow-cyan))] opacity-[0.04] animate-float-delayed" />
 
-        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="text-center max-w-4xl mx-auto">
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <div className="flex gap-8 items-center justify-center flex-col">
             <m.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="mb-8"
             >
               <span className="section-label">
                 <Sparkles className="w-3 h-3" />
-                Powered by Machine Learning
+                AI-Powered Detection
               </span>
             </m.div>
 
-            <m.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-              className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight"
-            >
-              Detect Insurance Fraud
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-[hsl(var(--glow-purple))] to-[hsl(var(--glow-cyan))]">
-                Before It Costs You
-              </span>
-            </m.h1>
+            <div className="flex gap-4 flex-col">
+              <m.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.6 }}
+                className="text-5xl md:text-7xl max-w-2xl tracking-tighter text-center font-bold"
+              >
+                <span className="text-foreground">Detect Insurance</span>
+                <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-4 md:pt-1">
+                  &nbsp;
+                  {titles.map((title, index) => (
+                    <m.span
+                      key={index}
+                      className="absolute font-bold gradient-text"
+                      initial={{ opacity: 0, y: "-100" }}
+                      transition={{ type: "spring", stiffness: 50 }}
+                      animate={
+                        titleNumber === index
+                          ? { y: 0, opacity: 1 }
+                          : { y: titleNumber > index ? -150 : 150, opacity: 0 }
+                      }
+                    >
+                      {title}
+                    </m.span>
+                  ))}
+                </span>
+              </m.h1>
 
-            <m.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-              className="text-lg text-muted-foreground mt-6 max-w-2xl mx-auto"
-            >
-              AI-powered fraud detection for insurance claims. Upload a single claim, a CSV batch,
-              or even a photo of a claim form — get instant risk scoring with explainable indicators.
-            </m.p>
+              <m.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4, duration: 0.6 }}
+                className="text-lg leading-relaxed tracking-tight text-muted-foreground max-w-2xl text-center"
+              >
+                AI-powered fraud detection for insurance claims. Upload a single claim, a CSV batch,
+                or even a photo of a claim form — get instant risk scoring with explainable indicators.
+              </m.p>
+            </div>
 
             <m.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.6 }}
-              className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10"
+              className="flex flex-col sm:flex-row items-center justify-center gap-4"
             >
               <Link
                 to="/predict"
@@ -85,7 +115,7 @@ const LandingPage = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8 }}
-              className="text-xs text-muted-foreground mt-4"
+              className="text-xs text-muted-foreground"
             >
               No account needed — start analyzing instantly
             </m.p>
@@ -96,7 +126,7 @@ const LandingPage = () => {
       {/* Features */}
       <section className="py-20 relative">
         <div className="absolute inset-0 dot-grid opacity-20" />
-        <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
           <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}

@@ -1,27 +1,52 @@
 import { m } from "framer-motion";
-import { Shield, Brain, Cpu, Database, Code, Users, Zap, Target, Lock, BarChart3, Globe, Layers } from "lucide-react";
-
-const team = [
-  { role: "ML Engineer", desc: "Model development and training" },
-  { role: "Data Scientist", desc: "Feature engineering and analysis" },
-  { role: "Backend Developer", desc: "Flask API and deployment" },
-  { role: "Frontend Developer", desc: "React dashboard and UX" },
-];
-
-const techStack = [
-  { icon: Brain, name: "Machine Learning", desc: "XGBoost & Random Forest ensemble models" },
-  { icon: Database, name: "Python & Flask", desc: "Robust API with RESTful endpoints" },
-  { icon: Code, name: "React & TypeScript", desc: "Modern, type-safe frontend architecture" },
-  { icon: Layers, name: "Tailwind CSS", desc: "Utility-first responsive design system" },
-];
+import { Sparkles, Zap, Target, Lock, BarChart3, Globe, Users } from "lucide-react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const features = [
   { icon: Zap, title: "Real-time Predictions", desc: "Sub-second fraud detection with optimized ML pipeline" },
-  { icon: Target, title: "98.5% Accuracy", desc: "Industry-leading model accuracy trained on 100K+ claims" },
-  { icon: Lock, title: "Secure by Design", desc: "Enterprise-grade security with encrypted data handling" },
+  { icon: Target, title: "High Accuracy", desc: "SVM model trained on labeled insurance claims dataset" },
+  { icon: Lock, title: "Secure by Design", desc: "Row-level security with encrypted data handling" },
   { icon: BarChart3, title: "Rich Analytics", desc: "Comprehensive dashboards for fraud pattern analysis" },
   { icon: Globe, title: "RESTful API", desc: "Easy integration with existing insurance platforms" },
-  { icon: Users, title: "Team Collaboration", desc: "Multi-user access with role-based permissions" },
+  { icon: Users, title: "Guest Mode", desc: "Use all prediction features without creating an account" },
+];
+
+const faqItems = [
+  {
+    question: "What ML model does FraudShield use?",
+    answer:
+      "FraudShield uses a Support Vector Machine (SVM) classifier trained on labeled insurance claims data. The model analyzes 24 input features including policy details, incident characteristics, and claim amounts to predict fraud probability with a confidence score.",
+  },
+  {
+    question: "What technologies power the platform?",
+    answer:
+      "The frontend is built with React 18, TypeScript, Vite, and Tailwind CSS. The ML backend runs on Python with Flask and scikit-learn. We use InsForge (Supabase-compatible BaaS) for database, authentication, and AI gateway. Document AI uses GPT-4o-mini for PDF/image field extraction.",
+  },
+  {
+    question: "How does Document AI work?",
+    answer:
+      "Upload a PDF or image of a claim form, and our Document AI (powered by GPT-4o-mini via InsForge AI Gateway) automatically extracts structured fields like policy number, incident type, claim amount, and more. Extracted data is pre-filled into the prediction form for instant analysis.",
+  },
+  {
+    question: "Do I need an account to use predictions?",
+    answer:
+      "No. All prediction features — single claim analysis, bulk CSV upload, and Document AI extraction — work without an account in Guest Mode. Creating an account lets you save claim history, access the analytics dashboard, and view detailed claim reports.",
+  },
+  {
+    question: "How does bulk processing work?",
+    answer:
+      "Upload a CSV file with up to 50 rows of claim data. Each row is validated and processed through the ML model individually. You get per-row predictions with fraud probability and risk scores, plus a downloadable summary of all results.",
+  },
+  {
+    question: "Who built this project?",
+    answer:
+      "FraudShield.ai was built as a capstone project by a team of students, combining machine learning, full-stack web development, and AI integration. The project demonstrates real-world application of SVM classification for insurance fraud detection.",
+  },
 ];
 
 const AboutPage = () => {
@@ -34,7 +59,10 @@ const AboutPage = () => {
       <section className="relative py-20 sm:py-28 text-center">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <span className="section-label">About the Project</span>
+            <span className="section-label">
+              <Sparkles className="w-3 h-3" />
+              About the Project
+            </span>
           </m.div>
           <m.h1
             initial={{ opacity: 0, y: 20 }}
@@ -51,15 +79,15 @@ const AboutPage = () => {
             transition={{ delay: 0.2 }}
             className="text-lg text-muted-foreground mt-6 max-w-2xl mx-auto leading-relaxed"
           >
-            FraudShield.ai leverages cutting-edge machine learning to identify fraudulent
-            insurance claims in real-time, saving companies millions and protecting honest policyholders.
+            FraudShield.ai leverages machine learning to identify fraudulent
+            insurance claims in real-time, helping reduce losses and protecting honest policyholders.
           </m.p>
         </div>
       </section>
 
-      {/* Mission */}
+      {/* Mission + Stats */}
       <section className="relative py-16">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <m.div
               initial={{ opacity: 0, x: -20 }}
@@ -70,13 +98,13 @@ const AboutPage = () => {
               <h2 className="text-3xl font-bold text-foreground mt-4">Fighting Fraud with Data</h2>
               <p className="text-muted-foreground mt-4 leading-relaxed">
                 Insurance fraud costs the industry over $80 billion annually. Our platform uses
-                advanced ensemble machine learning models trained on hundreds of thousands of claims
+                a Support Vector Machine (SVM) classifier trained on labeled insurance claims data
                 to identify patterns that human reviewers often miss.
               </p>
               <p className="text-muted-foreground mt-4 leading-relaxed">
-                By combining XGBoost and Random Forest classifiers with deep feature engineering,
-                we achieve industry-leading accuracy while maintaining explainability through
-                detailed fraud indicator analysis.
+                Combined with Document AI for automatic field extraction from PDFs and images,
+                and a modern React dashboard for visualization, FraudShield.ai provides
+                an end-to-end fraud detection solution.
               </p>
             </m.div>
             <m.div
@@ -86,10 +114,10 @@ const AboutPage = () => {
               className="grid grid-cols-2 gap-4"
             >
               {[
-                { value: "100K+", label: "Training Samples" },
-                { value: "98.5%", label: "Model Accuracy" },
-                { value: "< 2s", label: "Prediction Time" },
+                { value: "SVM", label: "ML Model" },
                 { value: "24", label: "Input Features" },
+                { value: "< 2s", label: "Prediction Time" },
+                { value: "GPT-4o", label: "Document AI" },
               ].map((stat, i) => (
                 <m.div
                   key={stat.label}
@@ -110,7 +138,7 @@ const AboutPage = () => {
 
       {/* Features */}
       <section className="relative py-20">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <m.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -118,7 +146,7 @@ const AboutPage = () => {
             className="text-center mb-12"
           >
             <span className="section-label">Features</span>
-            <h2 className="text-3xl font-bold text-foreground mt-4">Built for Enterprise</h2>
+            <h2 className="text-3xl font-bold text-foreground mt-4">Key Capabilities</h2>
           </m.div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {features.map((f, i) => (
@@ -141,40 +169,7 @@ const AboutPage = () => {
         </div>
       </section>
 
-      {/* Tech Stack */}
-      <section className="relative py-20">
-        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-          <m.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12"
-          >
-            <span className="section-label">Technology</span>
-            <h2 className="text-3xl font-bold text-foreground mt-4">Powered By</h2>
-          </m.div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {techStack.map((t, i) => (
-              <m.div
-                key={t.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="glass-card-hover p-6 text-center"
-              >
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-[hsl(var(--glow-cyan))]/10 flex items-center justify-center mx-auto mb-3">
-                  <t.icon className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="text-sm font-bold text-foreground mb-1">{t.name}</h3>
-                <p className="text-[11px] text-muted-foreground">{t.desc}</p>
-              </m.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Team */}
+      {/* FAQ Accordion */}
       <section className="relative py-20">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <m.div
@@ -183,27 +178,36 @@ const AboutPage = () => {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <span className="section-label">Core Team</span>
-            <h2 className="text-3xl font-bold text-foreground mt-4">The Team Behind It</h2>
+            <span className="section-label">FAQ</span>
+            <h2 className="text-3xl font-bold text-foreground mt-4">Frequently Asked Questions</h2>
+            <p className="text-muted-foreground mt-3">
+              Everything you need to know about FraudShield.ai
+            </p>
           </m.div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {team.map((member, i) => (
-              <m.div
-                key={member.role}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="glass-card-hover p-5 text-center"
-              >
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-[hsl(var(--glow-purple))]/20 flex items-center justify-center mx-auto mb-3">
-                  <Users className="w-5 h-5 text-primary" />
-                </div>
-                <h3 className="text-xs font-bold text-foreground">{member.role}</h3>
-                <p className="text-[10px] text-muted-foreground mt-1">{member.desc}</p>
-              </m.div>
-            ))}
-          </div>
+
+          <m.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+          >
+            <Accordion type="single" collapsible className="glass-card px-6">
+              {faqItems.map((item, i) => (
+                <AccordionItem
+                  key={i}
+                  value={`item-${i}`}
+                  className="border-border/50"
+                >
+                  <AccordionTrigger className="text-sm font-semibold text-foreground hover:no-underline hover:text-primary transition-colors py-5">
+                    {item.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-sm text-muted-foreground leading-relaxed">
+                    {item.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </m.div>
         </div>
       </section>
     </div>

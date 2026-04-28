@@ -21,7 +21,7 @@ const DashboardPage = () => {
       <div className="absolute inset-0 dot-grid opacity-20" />
       <div className="glow-orb w-[500px] h-[500px] -top-32 -left-32 bg-[hsl(var(--glow-primary))] opacity-[0.05] animate-pulse-glow" />
 
-      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+      <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         {/* Welcome Header */}
         <m.div
           initial={{ opacity: 0, y: 20 }}

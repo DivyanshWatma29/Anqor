@@ -82,7 +82,7 @@ const PredictPage = () => {
       <div className="glow-orb w-[400px] h-[400px] -top-32 -right-32 bg-[hsl(var(--glow-primary))] opacity-[0.05]" />
       <div className="glow-orb w-[300px] h-[300px] bottom-0 -left-32 bg-[hsl(var(--glow-purple))] opacity-[0.04]" />
 
-      <div className="relative max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
         <m.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

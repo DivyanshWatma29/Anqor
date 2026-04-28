@@ -43,10 +43,10 @@ const Navbar = () => {
           : "hsla(220, 15%, 90%, 0.5)",
       }}
     >
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
             <div className="relative">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--glow-purple))] flex items-center justify-center shadow-lg shadow-primary/25">
                 <Shield className="w-5 h-5 text-primary-foreground" />
@@ -61,78 +61,93 @@ const Navbar = () => {
             </div>
           </Link>
 
-          {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-1 p-1 rounded-xl bg-secondary/50">
-            {visibleLinks.map((link) => {
-              const isActive = location.pathname === link.path;
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`relative px-4 py-1.5 rounded-lg text-sm font-medium transition-all duration-300 ${
-                    isActive
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+          {/* Desktop Nav + Actions (right side) */}
+          <div className="hidden md:flex items-center gap-6">
+            {/* Nav Links */}
+            <div className="flex items-center gap-1">
+              {visibleLinks.map((link) => {
+                const isActive = location.pathname === link.path;
+                return (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={`relative px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      isActive
+                        ? "text-foreground"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {isActive && (
+                      <m.div
+                        layoutId="activeNav"
+                        className="absolute inset-0 rounded-lg bg-secondary/80 border border-border/50"
+                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      />
+                    )}
+                    <span className="relative z-10">{link.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-6 bg-border/50" />
+
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setTheme(isDark ? "light" : "dark")}
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-300"
+              >
+                <m.div
+                  key={isDark ? "sun" : "moon"}
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  transition={{ duration: 0.3 }}
                 >
-                  {isActive && (
-                    <m.div
-                      layoutId="activeNav"
-                      className="absolute inset-0 rounded-lg bg-card shadow-sm border border-border/50"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                  <span className="relative z-10">{link.label}</span>
+                  {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                </m.div>
+              </button>
+
+              {user ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-[hsl(var(--glow-purple))]/20 flex items-center justify-center border border-primary/20">
+                    <span className="text-xs font-bold text-primary">{initials}</span>
+                  </div>
+                  <span className="hidden lg:block text-sm font-medium text-foreground max-w-[120px] truncate">
+                    {user.name}
+                  </span>
+                  <button
+                    onClick={signOut}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-danger hover:bg-danger/10 transition-all duration-300"
+                    title="Sign out"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  to="/login"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 text-sm font-medium transition-all duration-300"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span className="hidden sm:inline">Sign In</span>
                 </Link>
-              );
-            })}
+              )}
+            </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex items-center gap-2">
+          {/* Mobile menu button */}
+          <div className="flex items-center gap-2 md:hidden">
             <button
               onClick={() => setTheme(isDark ? "light" : "dark")}
               className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-300"
             >
-              <m.div
-                key={isDark ? "sun" : "moon"}
-                initial={{ rotate: -90, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </m.div>
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
-
-            {user ? (
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/20 to-[hsl(var(--glow-purple))]/20 flex items-center justify-center border border-primary/20">
-                  <span className="text-xs font-bold text-primary">{initials}</span>
-                </div>
-                <span className="hidden lg:block text-sm font-medium text-foreground max-w-[120px] truncate">
-                  {user.name}
-                </span>
-                <button
-                  onClick={signOut}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-danger hover:bg-danger/10 transition-all duration-300"
-                  title="Sign out"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <Link
-                to="/login"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 text-sm font-medium transition-all duration-300"
-              >
-                <LogIn className="w-4 h-4" />
-                <span className="hidden sm:inline">Sign In</span>
-              </Link>
-            )}
-
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
             >
               {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
@@ -164,6 +179,15 @@ const Navbar = () => {
                   {link.label}
                 </Link>
               ))}
+              {!user && (
+                <Link
+                  to="/login"
+                  onClick={() => setMobileOpen(false)}
+                  className="block px-4 py-2.5 rounded-xl text-sm font-medium text-primary bg-primary/10"
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
           </m.div>
         )}

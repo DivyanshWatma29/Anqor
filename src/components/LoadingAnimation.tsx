@@ -1,90 +1,44 @@
-import { useEffect, useState } from "react";
-import { m, AnimatePresence } from "framer-motion";
-import { Shield } from "lucide-react";
-
-const messages = [
-  "Analyzing claim patterns...",
-  "Running fraud detection model...",
-  "Evaluating risk factors...",
-  "Generating risk score...",
-];
+import { Skeleton } from "@/components/ui/skeleton";
 
 const LoadingAnimation = () => {
-  const [msgIndex, setMsgIndex] = useState(0);
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const msgInterval = setInterval(() => {
-      setMsgIndex((i) => (i + 1) % messages.length);
-    }, 1200);
-    const progressInterval = setInterval(() => {
-      setProgress((p) => Math.min(p + Math.random() * 8, 95));
-    }, 200);
-    return () => {
-      clearInterval(msgInterval);
-      clearInterval(progressInterval);
-    };
-  }, []);
-
   return (
-    <m.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="flex flex-col items-center justify-center py-24 gap-8"
-    >
-      {/* Animated shield icon */}
-      <div className="relative">
-        <m.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-          className="w-20 h-20 rounded-full border-2 border-transparent"
-          style={{
-            borderImage: "linear-gradient(135deg, hsl(var(--glow-primary)), hsl(var(--glow-purple)), hsl(var(--glow-cyan))) 1",
-            borderRadius: "50%",
-          }}
-        >
-          <div className="absolute inset-0 rounded-full border-2 border-primary/20" />
-          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin" />
-        </m.div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <m.div
-            animate={{ scale: [1, 1.1, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <Shield className="w-7 h-7 text-primary" />
-          </m.div>
-        </div>
-        <div className="absolute inset-0 rounded-full bg-primary/10 blur-xl animate-pulse-glow" />
+    <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
+      {/* Header skeleton */}
+      <div className="text-center space-y-4">
+        <Skeleton className="h-5 w-32 mx-auto rounded-full" />
+        <Skeleton className="h-10 w-80 mx-auto" />
+        <Skeleton className="h-4 w-96 mx-auto" />
       </div>
 
-      {/* Progress bar */}
-      <div className="w-48">
-        <div className="h-1 rounded-full bg-secondary overflow-hidden">
-          <m.div
-            className="h-full rounded-full"
-            style={{
-              background: "linear-gradient(90deg, hsl(var(--glow-primary)), hsl(var(--glow-purple)))",
-              width: `${progress}%`,
-            }}
-            transition={{ duration: 0.3 }}
-          />
+      {/* Content skeleton */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-12">
+        <div className="space-y-4">
+          <Skeleton className="h-5 w-24 rounded-full" />
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-5/6" />
+          <Skeleton className="h-4 w-4/6" />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-28 rounded-2xl" />
+          <Skeleton className="h-28 rounded-2xl" />
         </div>
       </div>
 
-      {/* Animated message */}
-      <AnimatePresence mode="wait">
-        <m.p
-          key={msgIndex}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          className="text-sm text-muted-foreground font-medium"
-        >
-          {messages[msgIndex]}
-        </m.p>
-      </AnimatePresence>
-    </m.div>
+      {/* Cards skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="p-6 rounded-2xl border border-border/30 space-y-3">
+            <Skeleton className="h-10 w-10 rounded-xl" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-4/5" />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
