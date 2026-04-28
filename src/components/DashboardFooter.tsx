@@ -1,5 +1,6 @@
-import { Shield } from "lucide-react";
+import { Shield, ArrowRight, Mail } from "lucide-react";
 import { PrefetchLink as Link } from "../App";
+import { useState } from "react";
 
 const footerSections = [
   {
@@ -14,8 +15,8 @@ const footerSections = [
   {
     title: "Resources",
     links: [
-      { label: "About", path: "/about" },
-      { label: "Documentation", path: "/about" },
+      { label: "About", path: "/" },
+      { label: "Documentation", path: "/" },
     ],
   },
 ];
@@ -51,14 +52,26 @@ const socialLinks = [
 ];
 
 const DashboardFooter = () => {
+  const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email) {
+      setSubscribed(true);
+      setEmail("");
+      setTimeout(() => setSubscribed(false), 3000);
+    }
+  };
+
   return (
-    <footer className="relative border-t border-border/50 mt-12">
+    <footer className="relative border-t border-border/50 mt-12 bg-secondary/10">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
           {/* Brand */}
-          <div className="md:col-span-5">
+          <div className="md:col-span-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--glow-purple))] flex items-center justify-center">
                 <Shield className="w-6 h-6 text-primary-foreground" />
@@ -68,7 +81,7 @@ const DashboardFooter = () => {
               </span>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed mb-6 max-w-sm">
-              AI-powered insurance fraud detection platform built with machine learning for intelligent risk analysis.
+              AI-powered insurance fraud detection platform built with machine learning for intelligent risk analysis across all major claim types.
             </p>
             {/* Social icons */}
             <div className="flex items-center gap-2">
@@ -107,22 +120,35 @@ const DashboardFooter = () => {
             </div>
           ))}
 
-          {/* Legal column */}
-          <div className="md:col-span-3">
-            <h4 className="text-xs font-bold text-foreground mb-4 uppercase tracking-widest">
-              Legal
+          {/* Subscribe Column */}
+          <div className="md:col-span-4">
+            <h4 className="text-xs font-bold text-foreground mb-4 uppercase tracking-widest flex items-center gap-2">
+              <Mail className="w-4 h-4" /> Stay Updated
             </h4>
-            <div className="space-y-2.5">
-              {["Privacy Policy", "Terms of Service", "Cookie Policy"].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  className="block text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {item}
-                </a>
-              ))}
-            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Get the latest updates on new models, API releases, and fraud detection trends.
+            </p>
+            <form onSubmit={handleSubscribe} className="relative">
+              <input
+                type="email"
+                placeholder="Enter your email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-secondary border border-border/50 rounded-xl py-3 pl-4 pr-12 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+                required
+              />
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </form>
+            {subscribed && (
+              <p className="text-xs text-primary mt-2 flex items-center gap-1">
+                <Shield className="w-3 h-3" /> Subscribed successfully!
+              </p>
+            )}
           </div>
         </div>
 
@@ -131,9 +157,10 @@ const DashboardFooter = () => {
           <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} FraudShield.ai. All rights reserved.
           </p>
-          <p className="text-xs text-muted-foreground">
-            Built for smarter insurance decisions.
-          </p>
+          <div className="flex gap-4">
+            <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
+            <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</a>
+          </div>
         </div>
       </div>
     </footer>

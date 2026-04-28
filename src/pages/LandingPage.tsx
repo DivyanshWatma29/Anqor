@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { m } from "framer-motion";
-import { ArrowRight, Sparkles, Zap, BarChart3, FileUp, Upload, Users, Shield } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, BarChart3, FileUp, Upload, Users, Shield, BookOpen, Layers } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const features = [
-  { icon: Zap, title: "Real-time Detection", desc: "Sub-second fraud predictions powered by ML models" },
-  { icon: BarChart3, title: "Deep Analytics", desc: "Risk scoring, severity analysis, and trend visualization" },
-  { icon: Upload, title: "Document AI", desc: "Upload PDF or image of claims — AI extracts fields automatically" },
-  { icon: FileUp, title: "Bulk Processing", desc: "Batch-process hundreds of claims from CSV files in seconds" },
-  { icon: Users, title: "No Login Required", desc: "Use all prediction features instantly — sign in only to save history" },
-  { icon: Shield, title: "Secure Platform", desc: "Row-level security, encrypted data, and InsForge Auth" },
+  { icon: Layers, title: "Universal Models", desc: "Native support for Auto, Health, Travel, Property, and Life insurance claims" },
+  { icon: Upload, title: "Document AI", desc: "Upload PDF or image of claims — AI extracts fields automatically to schema" },
+  { icon: FileUp, title: "Bulk Processing", desc: "Batch-process hundreds of claims from CSV files in seconds with AI header mapping" },
+  { icon: Zap, title: "Real-time Detection", desc: "Sub-second fraud predictions powered by robust RandomForest & SVC ML models" },
+  { icon: BarChart3, title: "Deep Analytics", desc: "Risk scoring, probability thresholds, severity analysis, and trend visualization" },
+  { icon: Shield, title: "Secure Platform", desc: "Row-level security, encrypted data, and InsForge Auth for historical tracking" },
 ];
 
 const LandingPage = () => {
@@ -46,7 +46,7 @@ const LandingPage = () => {
             >
               <span className="section-label">
                 <Sparkles className="w-3 h-3" />
-                AI-Powered Detection
+                AI-Powered Detection Platform
               </span>
             </m.div>
 
@@ -55,7 +55,7 @@ const LandingPage = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2, duration: 0.6 }}
-                className="text-5xl md:text-7xl max-w-2xl tracking-tighter text-center font-bold"
+                className="text-5xl md:text-7xl max-w-3xl tracking-tighter text-center font-bold"
               >
                 <span className="text-foreground">Detect Insurance</span>
                 <span className="relative flex w-full justify-center overflow-hidden text-center md:pb-4 md:pt-1">
@@ -84,8 +84,8 @@ const LandingPage = () => {
                 transition={{ delay: 0.4, duration: 0.6 }}
                 className="text-lg leading-relaxed tracking-tight text-muted-foreground max-w-2xl text-center"
               >
-                AI-powered fraud detection for insurance claims. Upload a single claim, a CSV batch,
-                or even a photo of a claim form — get instant risk scoring with explainable indicators.
+                Universal fraud detection architecture supporting <strong>Auto, Health, Travel, Property, and Life</strong> insurance. 
+                Upload single claims, batch CSVs, or raw claim documents for instant, explainable risk scoring.
               </m.p>
             </div>
 
@@ -117,9 +117,42 @@ const LandingPage = () => {
               transition={{ delay: 0.8 }}
               className="text-xs text-muted-foreground"
             >
-              No account needed — start analyzing instantly
+              No account needed for real-time predictions.
             </m.p>
           </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section className="py-20 relative bg-secondary/20 border-y border-border/40">
+        <div className="absolute inset-0 grain-overlay opacity-30" />
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
+          <m.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="max-w-4xl mx-auto"
+          >
+            <div className="text-center mb-10">
+              <span className="section-label inline-flex items-center gap-2"><BookOpen className="w-4 h-4" /> About FraudShield.ai</span>
+              <h2 className="text-3xl font-bold text-foreground mt-4">Pioneering the Universal Claims Pipeline</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="glass-card p-8 space-y-4">
+                <h3 className="text-lg font-semibold text-primary">The Vision</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  FraudShield.ai was engineered as a comprehensive solution for modern insurance providers. Instead of building isolated tools for specific insurance types, we architected a universal registry that dynamically routes claims to domain-specific Machine Learning models—all through a single, elegant interface.
+                </p>
+              </div>
+              <div className="glass-card p-8 space-y-4">
+                <h3 className="text-lg font-semibold text-[hsl(var(--glow-purple))]">The Technology</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Powered by custom-trained Scikit-Learn Pipelines (RandomForest & SVC) and served via Hugging Face. We augmented traditional structured data entry with LLM-powered <strong>Document Intelligence</strong> and <strong>AI CSV Column Mapping</strong> to seamlessly bridge the gap between unstructured reality and strict ML schemas.
+                </p>
+              </div>
+            </div>
+          </m.div>
         </div>
       </section>
 
@@ -138,7 +171,7 @@ const LandingPage = () => {
               Everything You Need
             </h2>
             <p className="text-muted-foreground mt-3 max-w-lg mx-auto">
-              From single claim analysis to batch processing — built for individuals and agencies alike.
+              From single claim analysis to batch processing — built for speed, accuracy, and scale.
             </p>
           </m.div>
 
