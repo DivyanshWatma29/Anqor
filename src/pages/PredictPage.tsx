@@ -9,12 +9,14 @@ import { extractClaimFromFile, type ExtractionResult } from "@/lib/documentAI";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
-import { LogIn, ClipboardList, FileUp } from "lucide-react";
+import { LogIn, ClipboardList, FileUp, ChevronDown } from "lucide-react";
+import { INSURANCE_SCHEMAS, type ClaimCategory } from "@/schemas/insuranceTypes";
 
 type Tab = "form" | "document";
 
 const PredictPage = () => {
   const [activeTab, setActiveTab] = useState<Tab>("form");
+  const [claimCategory, setClaimCategory] = useState<ClaimCategory>("auto");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<PredictionResultData | null>(null);
   const { user } = useAuth();
@@ -29,7 +31,9 @@ const PredictPage = () => {
     setResult(null);
 
     try {
-      const claim = await predictClaim(data);
+      // Temporarily cast data. In Phase 4, predictClaim will accept (data, claimCategory)
+      const payload = { ...data, claim_type: claimCategory } as ClaimData;
+      const claim = await predictClaim(payload);
       setResult({
         prediction: claim.prediction,
         probability: claim.risk_score,
@@ -49,6 +53,7 @@ const PredictPage = () => {
     setResult(null);
 
     try {
+      // In the future, extractClaimFromFile will take claimCategory
       const extraction = await extractClaimFromFile(file);
       setExtractionResult(extraction);
 
@@ -56,7 +61,15 @@ const PredictPage = () => {
         setExtractedData(extraction.data);
         toast.success("Fields extracted successfully! Review and submit.");
       } else {
-        toast.error(extraction.error || "Failed to extract fields");
+        if (extraction.is_valid_claim_form === false) {
+          toast.error("Document Rejected", {
+            description: extraction.rejection_reason || extraction.error
+          });
+        } else {
+          toast.error("Failed to extract data", {
+            description: extraction.error || "An unexpected error occurred"
+          });
+        }
       }
     } catch (err: unknown) {
       setExtractionResult({ success: false, error: err instanceof Error ? err.message : 'Unknown error', model: '' });
@@ -89,9 +102,9 @@ const PredictPage = () => {
           className="text-center mb-8"
         >
           <span className="section-label">Prediction Engine</span>
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mt-4">Fraud Detection Analysis</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mt-4">Universal Fraud Detection</h1>
           <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
-            Submit claim details or upload a document for AI-powered fraud analysis.
+            Submit claim details or upload a document for AI-powered fraud analysis across multiple insurance categories.
           </p>
           {!user && (
             <Link
@@ -103,6 +116,27 @@ const PredictPage = () => {
             </Link>
           )}
         </m.div>
+
+        {/* Claim Type Selector */}
+        <div className="flex justify-center mb-6">
+          <div className="glass-card p-4 flex flex-col sm:flex-row items-center gap-4 w-full max-w-md">
+            <span className="text-sm font-semibold text-foreground whitespace-nowrap">Claim Type:</span>
+            <div className="relative w-full">
+              <select
+                value={claimCategory}
+                onChange={(e) => setClaimCategory(e.target.value as ClaimCategory)}
+                className="input-premium appearance-none pr-10 w-full"
+              >
+                {Object.values(INSURANCE_SCHEMAS).map((schema) => (
+                  <option key={schema.id} value={schema.id} disabled={!schema.isAvailable}>
+                    {schema.label} {!schema.isAvailable && "(Coming Soon)"}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            </div>
+          </div>
+        </div>
 
         {/* Tab switcher */}
         <div className="flex justify-center mb-8">
@@ -139,12 +173,13 @@ const PredictPage = () => {
             <AnimatePresence mode="wait">
               {activeTab === "form" ? (
                 <m.div key="form" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                  {/* Later, we will pass category to ClaimForm to render dynamic fields */}
                   <ClaimForm onSubmit={handleSubmit} isLoading={isLoading} />
                 </m.div>
               ) : (
                 <m.div key="document" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
                   <div className="glass-card p-6">
-                    <h3 className="text-sm font-semibold text-foreground mb-4">Upload Claim Document</h3>
+                    <h3 className="text-sm font-semibold text-foreground mb-4">Upload {INSURANCE_SCHEMAS[claimCategory].label} Document</h3>
                     <DocumentUploader
                       onFileSelected={handleFileSelected}
                       isProcessing={isExtracting}
@@ -167,7 +202,7 @@ const PredictPage = () => {
                       </div>
                       <div className="grid grid-cols-2 gap-3">
                         {Object.entries(extractedData).map(([key, value]) => (
-                          <div key={key} className="text-xs">
+                          <div key={key} className="text-xs truncate" title={String(value)}>
                             <span className="text-muted-foreground">{key.replace(/_/g, ' ')}:</span>
                             <span className="ml-1 font-medium text-foreground">{String(value)}</span>
                           </div>
