@@ -14,6 +14,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import HomeRoute from "@/components/HomeRoute";
+import { Analytics } from "@vercel/analytics/react";
 
 // Lazy load pages
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
@@ -98,6 +99,7 @@ const App = () => {
               <Toaster />
               <Sonner />
               <AppContent />
+              <Analytics />
             </AuthProvider>
           </BrowserRouter>
         </LazyMotion>
