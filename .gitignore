@@ -1,0 +1,66 @@
+
+# Python & ML Service
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+.venv/
+env/
+.env_ml/
+
+# Machine Learning Data & Models
+ml-service/data/
+ml-service/models/*.pkl
+ml-service/models/*.h5
+ml-service/models/*.joblib
+*.csv
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# InsForge / Supabase / Secrets
+.env
+.env.local
+.env.*.local
+node_modules/
+dist/
+.env*
+ml-service/.venv/
+ml-service/venv/
+ml-service/__pycache__/
+.vercel
+
+# AI & Claude Artifacts
+.claude/
+qa-screenshots/
+render.yaml
+.gemini/
+.gstack/
+.lovable/
+GEMINI.md
+MASTER_SESSION_SNAPSHOT.md
+PROJECT_AUDIT_REPORT_INTEGRATED.md
+.env*.local
