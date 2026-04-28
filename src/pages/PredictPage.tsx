@@ -56,7 +56,15 @@ const PredictPage = () => {
         setExtractedData(extraction.data);
         toast.success("Fields extracted successfully! Review and submit.");
       } else {
-        toast.error(extraction.error || "Failed to extract fields");
+        if (extraction.is_valid_claim_form === false) {
+          toast.error("Document Rejected", {
+            description: extraction.rejection_reason || extraction.error
+          });
+        } else {
+          toast.error("Failed to extract data", {
+            description: extraction.error || "An unexpected error occurred"
+          });
+        }
       }
     } catch (err: unknown) {
       setExtractionResult({ success: false, error: err instanceof Error ? err.message : 'Unknown error', model: '' });
