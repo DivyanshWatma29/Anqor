@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 import { m } from "framer-motion";
 import { User, FileText, DollarSign, AlertTriangle, ClipboardList, ChevronDown, Shield } from "lucide-react";
 
@@ -58,18 +58,19 @@ const defaultClaim: ClaimData = {
 
 interface SelectFieldProps {
   label: string;
+  name: keyof ClaimData;
   value: string;
-  onChange: (v: string) => void;
+  onChange: (key: keyof ClaimData, v: any) => void;
   options: string[];
 }
 
-const SelectField = ({ label, value, onChange, options }: SelectFieldProps) => (
+const SelectField = memo(({ label, name, value, onChange, options }: SelectFieldProps) => (
   <div className="space-y-2">
     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
     <div className="relative">
       <select
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange(name, e.target.value)}
         className="input-premium appearance-none pr-10"
       >
         {options.map((o) => (
@@ -79,26 +80,29 @@ const SelectField = ({ label, value, onChange, options }: SelectFieldProps) => (
       <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
     </div>
   </div>
-);
+));
+SelectField.displayName = "SelectField";
 
 interface NumberFieldProps {
   label: string;
+  name: keyof ClaimData;
   value: number;
-  onChange: (v: number) => void;
+  onChange: (key: keyof ClaimData, v: any) => void;
 }
 
-const NumberField = ({ label, value, onChange }: NumberFieldProps) => (
+const NumberField = memo(({ label, name, value, onChange }: NumberFieldProps) => (
   <div className="space-y-2">
     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
     <input
       type="number"
       value={value}
-      onChange={(e) => onChange(Number(e.target.value))}
+      onChange={(e) => onChange(name, Number(e.target.value))}
       min={0}
       className="input-premium"
     />
   </div>
-);
+));
+NumberField.displayName = "NumberField";
 
 interface FormSectionProps {
   icon: React.ReactNode;
@@ -108,7 +112,7 @@ interface FormSectionProps {
   delay?: number;
 }
 
-const FormSection = ({ icon, title, description, children, delay = 0 }: FormSectionProps) => (
+const FormSection = memo(({ icon, title, description, children, delay = 0 }: FormSectionProps) => (
   <m.div
     initial={{ opacity: 0, y: 15 }}
     animate={{ opacity: 1, y: 0 }}
@@ -128,7 +132,8 @@ const FormSection = ({ icon, title, description, children, delay = 0 }: FormSect
       {children}
     </div>
   </m.div>
-);
+));
+FormSection.displayName = "FormSection";
 
 interface ClaimFormProps {
   onSubmit: (data: ClaimData) => void;
@@ -138,8 +143,9 @@ interface ClaimFormProps {
 const ClaimForm = ({ onSubmit, isLoading }: ClaimFormProps) => {
   const [form, setForm] = useState<ClaimData>(defaultClaim);
 
-  const update = <K extends keyof ClaimData>(key: K, value: ClaimData[K]) =>
+  const update = useCallback((key: keyof ClaimData, value: any) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
   return (
     <div className="glass-card p-6 sm:p-8 space-y-8">
@@ -149,50 +155,50 @@ const ClaimForm = ({ onSubmit, isLoading }: ClaimFormProps) => {
       </div>
 
       <FormSection icon={<User className="w-4 h-4 text-primary" />} title="Customer Profile" description="Insured person information" delay={0.1}>
-        <NumberField label="Months as Customer" value={form.months_as_customer} onChange={(v) => update("months_as_customer", v)} />
-        <SelectField label="Sex" value={form.insured_sex} onChange={(v) => update("insured_sex", v)} options={["MALE", "FEMALE"]} />
-        <SelectField label="Education Level" value={form.insured_education_level} onChange={(v) => update("insured_education_level", v)} options={["MD", "PhD", "Associate", "Masters", "High School", "College", "JD"]} />
-        <SelectField label="Occupation" value={form.insured_occupation} onChange={(v) => update("insured_occupation", v)} options={["exec-managerial", "prof-specialty", "sales", "craft-repair", "machine-op-inspct", "tech-support", "other-service", "adm-clerical", "transport-moving", "handlers-cleaners", "farming-fishing", "protective-serv"]} />
-        <SelectField label="Relationship" value={form.insured_relationship} onChange={(v) => update("insured_relationship", v)} options={["husband", "wife", "own-child", "not-in-family", "unmarried", "other-relative"]} />
+        <NumberField label="Months as Customer" name="months_as_customer" value={form.months_as_customer} onChange={update} />
+        <SelectField label="Sex" name="insured_sex" value={form.insured_sex} onChange={update} options={["MALE", "FEMALE"]} />
+        <SelectField label="Education Level" name="insured_education_level" value={form.insured_education_level} onChange={update} options={["MD", "PhD", "Associate", "Masters", "High School", "College", "JD"]} />
+        <SelectField label="Occupation" name="insured_occupation" value={form.insured_occupation} onChange={update} options={["exec-managerial", "prof-specialty", "sales", "craft-repair", "machine-op-inspct", "tech-support", "other-service", "adm-clerical", "transport-moving", "handlers-cleaners", "farming-fishing", "protective-serv"]} />
+        <SelectField label="Relationship" name="insured_relationship" value={form.insured_relationship} onChange={update} options={["husband", "wife", "own-child", "not-in-family", "unmarried", "other-relative"]} />
       </FormSection>
 
       <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
       <FormSection icon={<FileText className="w-4 h-4 text-primary" />} title="Policy Details" description="Insurance policy configuration" delay={0.2}>
-        <NumberField label="Deductible ($)" value={form.policy_deductable} onChange={(v) => update("policy_deductable", v)} />
-        <NumberField label="Annual Premium ($)" value={form.policy_annual_premium} onChange={(v) => update("policy_annual_premium", v)} />
-        <NumberField label="Umbrella Limit" value={form.umbrella_limit} onChange={(v) => update("umbrella_limit", v)} />
-        <SelectField label="Policy CSL" value={form.policy_csl} onChange={(v) => update("policy_csl", v)} options={["100/300", "250/500", "500/1000"]} />
+        <NumberField label="Deductible ($)" name="policy_deductable" value={form.policy_deductable} onChange={update} />
+        <NumberField label="Annual Premium ($)" name="policy_annual_premium" value={form.policy_annual_premium} onChange={update} />
+        <NumberField label="Umbrella Limit" name="umbrella_limit" value={form.umbrella_limit} onChange={update} />
+        <SelectField label="Policy CSL" name="policy_csl" value={form.policy_csl} onChange={update} options={["100/300", "250/500", "500/1000"]} />
       </FormSection>
 
       <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
       <FormSection icon={<DollarSign className="w-4 h-4 text-primary" />} title="Financial Indicators" description="Capital gains and losses" delay={0.3}>
-        <NumberField label="Capital Gains ($)" value={form.capital_gains} onChange={(v) => update("capital_gains", v)} />
-        <NumberField label="Capital Loss ($)" value={form.capital_loss} onChange={(v) => update("capital_loss", v)} />
+        <NumberField label="Capital Gains ($)" name="capital_gains" value={form.capital_gains} onChange={update} />
+        <NumberField label="Capital Loss ($)" name="capital_loss" value={form.capital_loss} onChange={update} />
       </FormSection>
 
       <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
       <FormSection icon={<AlertTriangle className="w-4 h-4 text-primary" />} title="Incident Information" description="Details about the reported incident" delay={0.4}>
-        <NumberField label="Incident Hour (0-23)" value={form.incident_hour_of_the_day} onChange={(v) => update("incident_hour_of_the_day", v)} />
-        <SelectField label="Incident Type" value={form.incident_type} onChange={(v) => update("incident_type", v)} options={["Single Vehicle Collision", "Vehicle Theft", "Multi-vehicle Collision", "Parked Car"]} />
-        <SelectField label="Collision Type" value={form.collision_type} onChange={(v) => update("collision_type", v)} options={["Side Collision", "Rear Collision", "Front Collision", "?"]} />
-        <SelectField label="Severity" value={form.incident_severity} onChange={(v) => update("incident_severity", v)} options={["Major Damage", "Minor Damage", "Total Loss", "Trivial Damage"]} />
-        <SelectField label="Authorities Contacted" value={form.authorities_contacted} onChange={(v) => update("authorities_contacted", v)} options={["Police", "Fire", "Ambulance", "Other", "None"]} />
-        <NumberField label="Vehicles Involved" value={form.number_of_vehicles_involved} onChange={(v) => update("number_of_vehicles_involved", v)} />
-        <NumberField label="Bodily Injuries" value={form.bodily_injuries} onChange={(v) => update("bodily_injuries", v)} />
-        <NumberField label="Witnesses" value={form.witnesses} onChange={(v) => update("witnesses", v)} />
+        <NumberField label="Incident Hour (0-23)" name="incident_hour_of_the_day" value={form.incident_hour_of_the_day} onChange={update} />
+        <SelectField label="Incident Type" name="incident_type" value={form.incident_type} onChange={update} options={["Single Vehicle Collision", "Vehicle Theft", "Multi-vehicle Collision", "Parked Car"]} />
+        <SelectField label="Collision Type" name="collision_type" value={form.collision_type} onChange={update} options={["Side Collision", "Rear Collision", "Front Collision", "?"]} />
+        <SelectField label="Severity" name="incident_severity" value={form.incident_severity} onChange={update} options={["Major Damage", "Minor Damage", "Total Loss", "Trivial Damage"]} />
+        <SelectField label="Authorities Contacted" name="authorities_contacted" value={form.authorities_contacted} onChange={update} options={["Police", "Fire", "Ambulance", "Other", "None"]} />
+        <NumberField label="Vehicles Involved" name="number_of_vehicles_involved" value={form.number_of_vehicles_involved} onChange={update} />
+        <NumberField label="Bodily Injuries" name="bodily_injuries" value={form.bodily_injuries} onChange={update} />
+        <NumberField label="Witnesses" name="witnesses" value={form.witnesses} onChange={update} />
       </FormSection>
 
       <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
       <FormSection icon={<ClipboardList className="w-4 h-4 text-primary" />} title="Claim Details" description="Claim amounts and documentation" delay={0.5}>
-        <NumberField label="Injury Claim ($)" value={form.injury_claim} onChange={(v) => update("injury_claim", v)} />
-        <NumberField label="Property Claim ($)" value={form.property_claim} onChange={(v) => update("property_claim", v)} />
-        <NumberField label="Vehicle Claim ($)" value={form.vehicle_claim} onChange={(v) => update("vehicle_claim", v)} />
-        <SelectField label="Property Damage" value={form.property_damage} onChange={(v) => update("property_damage", v)} options={["YES", "NO", "?"]} />
-        <SelectField label="Police Report" value={form.police_report_available} onChange={(v) => update("police_report_available", v)} options={["YES", "NO", "?"]} />
+        <NumberField label="Injury Claim ($)" name="injury_claim" value={form.injury_claim} onChange={update} />
+        <NumberField label="Property Claim ($)" name="property_claim" value={form.property_claim} onChange={update} />
+        <NumberField label="Vehicle Claim ($)" name="vehicle_claim" value={form.vehicle_claim} onChange={update} />
+        <SelectField label="Property Damage" name="property_damage" value={form.property_damage} onChange={update} options={["YES", "NO", "?"]} />
+        <SelectField label="Police Report" name="police_report_available" value={form.police_report_available} onChange={update} options={["YES", "NO", "?"]} />
       </FormSection>
 
       <m.button
