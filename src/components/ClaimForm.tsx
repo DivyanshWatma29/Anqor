@@ -138,9 +138,10 @@ FormSection.displayName = "FormSection";
 interface ClaimFormProps {
   onSubmit: (data: ClaimData) => void;
   isLoading: boolean;
+  category?: "auto" | "health" | "travel" | "property";
 }
 
-const ClaimForm = ({ onSubmit, isLoading }: ClaimFormProps) => {
+const ClaimForm = ({ onSubmit, isLoading, category = "auto" }: ClaimFormProps) => {
   const [form, setForm] = useState<ClaimData>(defaultClaim);
 
   const update = useCallback((key: keyof ClaimData, value: any) => {
@@ -154,7 +155,18 @@ const ClaimForm = ({ onSubmit, isLoading }: ClaimFormProps) => {
         <p className="text-sm text-muted-foreground mt-1">Fill in the claim details below for AI-powered fraud detection</p>
       </div>
 
-      <FormSection icon={<User className="w-4 h-4 text-primary" />} title="Customer Profile" description="Insured person information" delay={0.1}>
+      {category !== "auto" ? (
+        <div className="p-8 text-center bg-secondary/50 rounded-xl border border-border/50">
+          <AlertTriangle className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
+          <h3 className="text-lg font-semibold text-foreground">Manual Form Not Available</h3>
+          <p className="text-sm text-muted-foreground mt-2">
+            The manual input form for {category} claims is currently under construction pending model training.
+            Please use the Document Upload tab to analyze {category} documents.
+          </p>
+        </div>
+      ) : (
+        <>
+          <FormSection icon={<User className="w-4 h-4 text-primary" />} title="Customer Profile" description="Insured person information" delay={0.1}>
         <NumberField label="Months as Customer" name="months_as_customer" value={form.months_as_customer} onChange={update} />
         <SelectField label="Sex" name="insured_sex" value={form.insured_sex} onChange={update} options={["MALE", "FEMALE"]} />
         <SelectField label="Education Level" name="insured_education_level" value={form.insured_education_level} onChange={update} options={["MD", "PhD", "Associate", "Masters", "High School", "College", "JD"]} />
@@ -200,6 +212,8 @@ const ClaimForm = ({ onSubmit, isLoading }: ClaimFormProps) => {
         <SelectField label="Property Damage" name="property_damage" value={form.property_damage} onChange={update} options={["YES", "NO", "?"]} />
         <SelectField label="Police Report" name="police_report_available" value={form.police_report_available} onChange={update} options={["YES", "NO", "?"]} />
       </FormSection>
+      </>
+      )}
 
       <m.button
         whileHover={{ scale: 1.01 }}

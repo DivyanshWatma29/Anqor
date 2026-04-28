@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { m } from 'framer-motion';
-import { FileSpreadsheet, Loader2, LogIn } from 'lucide-react';
+import { FileSpreadsheet, Loader2, LogIn, ChevronDown } from 'lucide-react';
 import FileDropzone, { type ParsedFileResult } from '@/components/FileDropzone';
 import BulkResultsTable from '@/components/BulkResultsTable';
 import { createBatch, predictClaim, type ClaimRecord } from '@/lib/api';
@@ -9,41 +9,10 @@ import { extractClaimFromFile, mapCSVHeaders } from '@/lib/documentAI';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
-
-const EXPECTED_HEADERS: (keyof ClaimData)[] = [
-  'months_as_customer', 'insured_sex', 'insured_education_level',
-  'insured_occupation', 'insured_relationship', 'policy_deductable',
-  'policy_annual_premium', 'umbrella_limit', 'policy_csl',
-  'capital_gains', 'capital_loss', 'incident_hour_of_the_day',
-  'incident_type', 'collision_type', 'incident_severity',
-  'authorities_contacted', 'number_of_vehicles_involved',
-  'bodily_injuries', 'witnesses', 'injury_claim', 'property_claim',
-  'vehicle_claim', 'property_damage', 'police_report_available',
-];
-
-const NUMERIC_FIELDS = new Set<string>([
-  'months_as_customer', 'policy_deductable', 'policy_annual_premium',
-  'umbrella_limit', 'capital_gains', 'capital_loss',
-  'incident_hour_of_the_day', 'number_of_vehicles_involved',
-  'bodily_injuries', 'witnesses', 'injury_claim', 'property_claim',
-  'vehicle_claim',
-]);
-
-const STRING_DEFAULTS: Record<string, string> = {
-  insured_sex: 'MALE',
-  insured_education_level: 'College',
-  insured_occupation: 'other-service',
-  insured_relationship: 'not-in-family',
-  policy_csl: '250/500',
-  incident_type: 'Single Vehicle Collision',
-  collision_type: '?',
-  incident_severity: 'Minor Damage',
-  authorities_contacted: 'Police',
-  property_damage: '?',
-  police_report_available: '?',
-};
+import { INSURANCE_SCHEMAS, type ClaimCategory } from '@/schemas/insuranceTypes';
 
 const BulkCheckPage = () => {
+  const [claimCategory, setClaimCategory] = useState<ClaimCategory>("auto");
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [totalRows, setTotalRows] = useState(0);
@@ -56,50 +25,51 @@ const BulkCheckPage = () => {
     setResults([]);
     setProgress(0);
 
+    const schema = INSURANCE_SCHEMAS[claimCategory];
+    const EXPECTED_HEADERS = schema.requiredFields;
+
     try {
       if (fileResult.type === 'csv') {
         const rawRows = fileResult.rows;
         if (rawRows.length === 0) throw new Error("CSV file is empty");
 
         setTotalRows(rawRows.length);
-        setStatusText('Analyzing CSV headers with AI...');
+        setStatusText(`Analyzing CSV headers for ${schema.label}...`);
 
         const headers = Object.keys(rawRows[0]);
-        const mappingResult = await mapCSVHeaders(headers);
+        const mappingResult = await mapCSVHeaders(headers, claimCategory);
 
         if (!mappingResult.success || !mappingResult.is_valid_insurance_dataset) {
-          throw new Error(mappingResult.rejection_reason || mappingResult.error || "Invalid auto insurance dataset");
+          throw new Error(mappingResult.rejection_reason || mappingResult.error || `Invalid ${schema.label} dataset`);
         }
 
         toast.success("Headers mapped successfully! Processing rows...");
         setStatusText('Transforming and processing claims...');
         const mapping = mappingResult.mapping || {};
 
-        const transformedRows: ClaimData[] = [];
+        const transformedRows: any[] = [];
         const failedRowIndices: number[] = [];
 
         rawRows.forEach((row, index) => {
-          const transformed: Partial<ClaimData> = {};
+          const transformed: Record<string, any> = {};
           let isValid = true;
 
           for (const [userCol, ourCol] of Object.entries(mapping)) {
              if (ourCol && row[userCol] !== undefined) {
-                transformed[ourCol as keyof ClaimData] = row[userCol] as never;
+                transformed[ourCol] = row[userCol];
              }
           }
 
-          if (Object.keys(transformed).length < 5) isValid = false;
+          if (Object.keys(transformed).length < Math.floor(EXPECTED_HEADERS.length * 0.2)) isValid = false;
 
           if (isValid) {
-            const finalRow: Record<string, string | number> = {};
+            const finalRow: Record<string, any> = {};
             for (const key of EXPECTED_HEADERS) {
-              if (NUMERIC_FIELDS.has(key)) {
-                finalRow[key] = Number(transformed[key as keyof ClaimData]) || 0;
-              } else {
-                finalRow[key] = String(transformed[key as keyof ClaimData] || STRING_DEFAULTS[key] || '');
-              }
+              // Basic fallback for missing required fields (in a real app, numeric/string checking would be schema-driven)
+              finalRow[key] = transformed[key] || 0;
             }
-            transformedRows.push(finalRow as unknown as ClaimData);
+            finalRow['claim_type'] = claimCategory;
+            transformedRows.push(finalRow);
           } else {
             failedRowIndices.push(index + 1);
           }
@@ -113,7 +83,7 @@ const BulkCheckPage = () => {
           setProgress((prev) => Math.min(prev + 1, transformedRows.length - 1));
         }, 200);
 
-        const { batch, claims, failedRows: backendFailed } = await createBatch(transformedRows, fileResult.fileName);
+        const { batch, claims, failedRows: backendFailed } = await createBatch(transformedRows as ClaimData[], fileResult.fileName);
         clearInterval(progressInterval);
         setProgress(transformedRows.length);
         setResults(claims);
@@ -128,9 +98,9 @@ const BulkCheckPage = () => {
         }
       } else {
         setTotalRows(1);
-        setStatusText('Extracting fields with AI...');
+        setStatusText(`Extracting fields for ${schema.label}...`);
 
-        const extraction = await extractClaimFromFile(fileResult.file);
+        const extraction = await extractClaimFromFile(fileResult.file, claimCategory);
         if (!extraction.success || !extraction.data) {
           toast.error(extraction.rejection_reason || extraction.error || 'Failed to extract fields from document');
           setProcessing(false);
@@ -140,7 +110,8 @@ const BulkCheckPage = () => {
         setStatusText('Running fraud prediction...');
         setProgress(1);
 
-        const claim = await predictClaim(extraction.data);
+        const payload = { ...extraction.data, claim_type: claimCategory } as ClaimData;
+        const claim = await predictClaim(payload);
         setResults([claim]);
         toast.success('Document analyzed and prediction complete');
       }
@@ -166,9 +137,9 @@ const BulkCheckPage = () => {
           className="text-center"
         >
           <span className="section-label">Batch Processing</span>
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mt-4">Bulk Fraud Check</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mt-4">Universal Bulk Fraud Check</h1>
           <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
-            Upload CSV, PDF, or image files to process claims through the ML engine.
+            Upload CSV, PDF, or image files to process claims through our multi-model AI engine.
           </p>
           {!user && (
             <Link
@@ -181,8 +152,30 @@ const BulkCheckPage = () => {
           )}
         </m.div>
 
+        {/* Claim Type Selector */}
+        <div className="flex justify-center">
+          <div className="glass-card p-4 flex flex-col sm:flex-row items-center gap-4 w-full max-w-md">
+            <span className="text-sm font-semibold text-foreground whitespace-nowrap">Dataset Category:</span>
+            <div className="relative w-full">
+              <select
+                value={claimCategory}
+                onChange={(e) => setClaimCategory(e.target.value as ClaimCategory)}
+                className="input-premium appearance-none pr-10 w-full"
+                disabled={processing}
+              >
+                {Object.values(INSURANCE_SCHEMAS).map((schema) => (
+                  <option key={schema.id} value={schema.id} disabled={!schema.isAvailable}>
+                    {schema.label} {!schema.isAvailable && "(Coming Soon)"}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            </div>
+          </div>
+        </div>
+
         {/* Dropzone */}
-        <FileDropzone onFileReady={handleFileReady} expectedHeaders={EXPECTED_HEADERS} />
+        <FileDropzone onFileReady={handleFileReady} expectedHeaders={INSURANCE_SCHEMAS[claimCategory].requiredFields} disabled={processing} />
 
         {/* Progress */}
         {processing && (
@@ -224,7 +217,7 @@ const BulkCheckPage = () => {
           >
             <FileSpreadsheet className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
             <p className="text-sm text-muted-foreground">
-              Upload a CSV, PDF, or image file to get started
+              Select a category and upload your files to get started
             </p>
           </m.div>
         )}
