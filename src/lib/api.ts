@@ -91,11 +91,6 @@ function buildClaimRecord(
   };
 }
 
-function getErrorMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  return 'Unknown error';
-}
-
 // ─── ML Prediction ──────────────────────────────────────────────
 
 async function callFlaskML(claimData: ClaimData): Promise<FlaskPrediction> {
@@ -105,6 +100,7 @@ async function callFlaskML(claimData: ClaimData): Promise<FlaskPrediction> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(claimData),
   });
+
   if (!response.ok) {
     const err: Record<string, string> = await response.json().catch(() => ({}));
     throw new Error(err.error || 'ML service error');
@@ -187,12 +183,11 @@ export async function getClaimStats(): Promise<DashboardStats> {
   const totalClaims = allClaims.length;
   const fraudClaims = allClaims.filter((c) => c.prediction === 'Fraud');
   const fraudDetected = fraudClaims.length;
-  const avgRiskScore =
-    totalClaims > 0
-      ? Math.round(
-          (allClaims.reduce((sum, c) => sum + c.risk_score, 0) / totalClaims) * 10
-        ) / 10
-      : 0;
+
+  const avgRiskScore = totalClaims > 0
+    ? Math.round((allClaims.reduce((sum, c) => sum + c.risk_score, 0) / totalClaims) * 10) / 10
+    : 0;
+
   const fraudRate = totalClaims > 0
     ? Math.round((fraudDetected / totalClaims) * 1000) / 10
     : 0;
@@ -223,8 +218,7 @@ export async function getClaimStats(): Promise<DashboardStats> {
   ];
   const claimAmountDistribution = ranges.map(({ range, min, max }) => ({
     range,
-    count: allClaims.filter((c) => c.claim_amount >= min && c.claim_amount < max)
-      .length,
+    count: allClaims.filter((c) => c.claim_amount >= min && c.claim_amount < max).length,
   }));
 
   return {
@@ -240,65 +234,90 @@ export async function getClaimStats(): Promise<DashboardStats> {
 
 // ─── Batches API ────────────────────────────────────────────────
 
-export async function createBatch(
-  rows: ClaimData[],
-  fileName: string
-): Promise<BatchResult> {
+export async function createBatch(rows: ClaimData[], fileName: string): Promise<BatchResult> {
   const userId = await getUserId();
+
+  if (!userId) {
+    return _createGuestBatch(rows, fileName);
+  }
+
+  return _createAuthenticatedBatch(rows, fileName, userId);
+}
+
+async function _createGuestBatch(rows: ClaimData[], fileName: string): Promise<BatchResult> {
+  if (rows.length > MAX_GUEST_BATCH_ROWS) {
+    throw new Error(`Guest mode supports up to ${MAX_GUEST_BATCH_ROWS} rows. Sign in to process larger batches.`);
+  }
 
   const processedClaims: ClaimRecord[] = [];
   const failedRows: number[] = [];
 
-  if (!userId) {
-    if (rows.length > MAX_GUEST_BATCH_ROWS) {
-      throw new Error(`Guest mode supports up to ${MAX_GUEST_BATCH_ROWS} rows. Sign in to process larger batches.`);
+  for (let i = 0; i < rows.length; i++) {
+    try {
+      const mlResult = await callFlaskML(rows[i]);
+      const record = buildClaimRecord(rows[i], mlResult);
+      processedClaims.push({
+        id: `guest-${Date.now()}-${processedClaims.length}`,
+        ...record,
+      });
+    } catch {
+      failedRows.push(i);
     }
-
-    for (let i = 0; i < rows.length; i++) {
-      try {
-        const mlResult = await callFlaskML(rows[i]);
-        const record = buildClaimRecord(rows[i], mlResult);
-        processedClaims.push({
-          id: `guest-${Date.now()}-${processedClaims.length}`,
-          ...record,
-        });
-      } catch {
-        failedRows.push(i);
-      }
-    }
-    return {
-      batch: {
-        id: `guest-batch-${Date.now()}`,
-        file_name: fileName,
-        total_rows: rows.length,
-        processed_rows: processedClaims.length,
-        status: 'completed',
-        created_at: new Date().toISOString(),
-      },
-      claims: processedClaims,
-      failedRows,
-    };
   }
 
-  // Authenticated: save to DB
-  const { data: batchData, error: batchError } = await insforge.database
+  return {
+    batch: {
+      id: `guest-batch-${Date.now()}`,
+      file_name: fileName,
+      total_rows: rows.length,
+      processed_rows: processedClaims.length,
+      status: 'completed',
+      created_at: new Date().toISOString(),
+    },
+    claims: processedClaims,
+    failedRows,
+  };
+}
+
+async function _createAuthenticatedBatch(rows: ClaimData[], fileName: string, userId: string): Promise<BatchResult> {
+  const batch = await _initializeBatchRecord(rows.length, fileName, userId);
+  const { processedClaims, failedRows } = await _processBatchRows(rows, batch.id, userId);
+
+  const finalStatus = failedRows.length === rows.length ? 'failed' : 'completed';
+  const updatedBatch = await _finalizeBatchRecord(batch.id, finalStatus, processedClaims.length);
+  const batchClaims = await _fetchBatchClaims(batch.id);
+
+  return {
+    batch: updatedBatch,
+    claims: batchClaims,
+    failedRows,
+  };
+}
+
+async function _initializeBatchRecord(totalRows: number, fileName: string, userId: string): Promise<BatchRecord> {
+  const { data, error } = await insforge.database
     .from('batches')
     .insert([{
       user_id: userId,
       file_name: fileName,
-      total_rows: rows.length,
+      total_rows: totalRows,
       processed_rows: 0,
       status: 'processing',
     }])
     .select();
 
-  if (batchError) throw new Error(batchError.message || 'Failed to create batch');
-  const batch = (batchData as BatchRecord[])[0];
+  if (error) throw new Error(error.message || 'Failed to create batch');
+  return (data as BatchRecord[])[0];
+}
+
+async function _processBatchRows(rows: ClaimData[], batchId: string, userId: string) {
+  const processedClaims: ClaimRecord[] = [];
+  const failedRows: number[] = [];
 
   for (let i = 0; i < rows.length; i++) {
     try {
       const mlResult = await callFlaskML(rows[i]);
-      const record = buildClaimRecord(rows[i], mlResult, { batch_id: batch.id });
+      const record = buildClaimRecord(rows[i], mlResult, { batch_id: batchId });
 
       await insforge.database.from('claims').insert([{
         ...record,
@@ -311,26 +330,28 @@ export async function createBatch(
     }
   }
 
-  const finalStatus = failedRows.length === rows.length ? 'failed' : 'completed';
-  const { data: updated, error: updateErr } = await insforge.database
+  return { processedClaims, failedRows };
+}
+
+async function _finalizeBatchRecord(batchId: string, status: string, processedCount: number): Promise<BatchRecord> {
+  const { data, error } = await insforge.database
     .from('batches')
-    .update({ status: finalStatus, processed_rows: processedClaims.length })
-    .eq('id', batch.id)
+    .update({ status, processed_rows: processedCount })
+    .eq('id', batchId)
     .select();
 
-  if (updateErr) throw new Error(updateErr.message);
+  if (error) throw new Error(error.message);
+  return (data as BatchRecord[])[0];
+}
 
-  const { data: batchClaims } = await insforge.database
+async function _fetchBatchClaims(batchId: string): Promise<ClaimRecord[]> {
+  const { data } = await insforge.database
     .from('claims')
     .select('*')
-    .eq('batch_id', batch.id)
+    .eq('batch_id', batchId)
     .order('created_at', { ascending: false });
 
-  return {
-    batch: (updated as BatchRecord[])[0],
-    claims: (batchClaims as ClaimRecord[]) || [],
-    failedRows,
-  };
+  return (data as ClaimRecord[]) || [];
 }
 
 export async function getBatches(): Promise<BatchRecord[]> {
