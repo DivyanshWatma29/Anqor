@@ -5,7 +5,7 @@ import FileDropzone, { type ParsedFileResult } from '@/components/FileDropzone';
 import BulkResultsTable from '@/components/BulkResultsTable';
 import { createBatch, predictClaim, type ClaimRecord } from '@/lib/api';
 import type { ClaimData } from '@/components/ClaimForm';
-import { extractClaimFromFile } from '@/lib/documentAI';
+import { extractClaimFromFile, mapCSVHeaders } from '@/lib/documentAI';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
@@ -29,17 +29,19 @@ const NUMERIC_FIELDS = new Set<string>([
   'vehicle_claim',
 ]);
 
-function parseRow(raw: Record<string, string | number>): ClaimData {
-  const parsed: Record<string, string | number> = {};
-  for (const key of EXPECTED_HEADERS) {
-    if (NUMERIC_FIELDS.has(key)) {
-      parsed[key] = Number(raw[key]) || 0;
-    } else {
-      parsed[key] = String(raw[key] || '');
-    }
-  }
-  return parsed as unknown as ClaimData;
-}
+const STRING_DEFAULTS: Record<string, string> = {
+  insured_sex: 'MALE',
+  insured_education_level: 'College',
+  insured_occupation: 'other-service',
+  insured_relationship: 'not-in-family',
+  policy_csl: '250/500',
+  incident_type: 'Single Vehicle Collision',
+  collision_type: '?',
+  incident_severity: 'Minor Damage',
+  authorities_contacted: 'Police',
+  property_damage: '?',
+  police_report_available: '?',
+};
 
 const BulkCheckPage = () => {
   const [processing, setProcessing] = useState(false);
@@ -56,22 +58,71 @@ const BulkCheckPage = () => {
 
     try {
       if (fileResult.type === 'csv') {
-        const claimRows = fileResult.rows.map(parseRow);
-        setTotalRows(claimRows.length);
-        setStatusText('Processing CSV claims...');
+        const rawRows = fileResult.rows;
+        if (rawRows.length === 0) throw new Error("CSV file is empty");
+
+        setTotalRows(rawRows.length);
+        setStatusText('Analyzing CSV headers with AI...');
+
+        const headers = Object.keys(rawRows[0]);
+        const mappingResult = await mapCSVHeaders(headers);
+
+        if (!mappingResult.success || !mappingResult.is_valid_insurance_dataset) {
+          throw new Error(mappingResult.rejection_reason || mappingResult.error || "Invalid auto insurance dataset");
+        }
+
+        toast.success("Headers mapped successfully! Processing rows...");
+        setStatusText('Transforming and processing claims...');
+        const mapping = mappingResult.mapping || {};
+
+        const transformedRows: ClaimData[] = [];
+        const failedRowIndices: number[] = [];
+
+        rawRows.forEach((row, index) => {
+          const transformed: Partial<ClaimData> = {};
+          let isValid = true;
+
+          for (const [userCol, ourCol] of Object.entries(mapping)) {
+             if (ourCol && row[userCol] !== undefined) {
+                transformed[ourCol as keyof ClaimData] = row[userCol] as never;
+             }
+          }
+
+          if (Object.keys(transformed).length < 5) isValid = false;
+
+          if (isValid) {
+            const finalRow: Record<string, string | number> = {};
+            for (const key of EXPECTED_HEADERS) {
+              if (NUMERIC_FIELDS.has(key)) {
+                finalRow[key] = Number(transformed[key as keyof ClaimData]) || 0;
+              } else {
+                finalRow[key] = String(transformed[key as keyof ClaimData] || STRING_DEFAULTS[key] || '');
+              }
+            }
+            transformedRows.push(finalRow as unknown as ClaimData);
+          } else {
+            failedRowIndices.push(index + 1);
+          }
+        });
+
+        if (transformedRows.length === 0) {
+          throw new Error("No valid rows found after mapping.");
+        }
 
         const progressInterval = setInterval(() => {
-          setProgress((prev) => Math.min(prev + 1, claimRows.length - 1));
+          setProgress((prev) => Math.min(prev + 1, transformedRows.length - 1));
         }, 200);
 
-        const { batch, claims, failedRows } = await createBatch(claimRows, fileResult.fileName);
+        const { batch, claims, failedRows: backendFailed } = await createBatch(transformedRows, fileResult.fileName);
         clearInterval(progressInterval);
-        setProgress(claimRows.length);
+        setProgress(transformedRows.length);
         setResults(claims);
 
+        const allFailed = [...failedRowIndices, ...backendFailed];
         const msg = `Processed ${batch.processed_rows} of ${batch.total_rows} claims`;
-        if (failedRows.length > 0) {
-          toast.warning(`${msg} (${failedRows.length} failed: rows ${failedRows.map(r => r + 1).join(', ')})`);
+
+        if (allFailed.length > 0) {
+          toast.warning(`${msg} (${allFailed.length} skipped)`);
         } else {
           toast.success(msg);
         }
@@ -81,7 +132,7 @@ const BulkCheckPage = () => {
 
         const extraction = await extractClaimFromFile(fileResult.file);
         if (!extraction.success || !extraction.data) {
-          toast.error(extraction.error || 'Failed to extract fields from document');
+          toast.error(extraction.rejection_reason || extraction.error || 'Failed to extract fields from document');
           setProcessing(false);
           return;
         }
@@ -94,7 +145,9 @@ const BulkCheckPage = () => {
         toast.success('Document analyzed and prediction complete');
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : 'Processing failed');
+      toast.error("Processing failed", {
+        description: err instanceof Error ? err.message : "Unknown error"
+      });
     } finally {
       setProcessing(false);
     }
