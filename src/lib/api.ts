@@ -4,7 +4,7 @@ import type { ClaimData } from '@/components/ClaimForm';
 export interface ClaimRecord {
   id: string;
   claim_id: string;
-  input_data: Record<string, any>;
+  input_data: Record<string, string | number | boolean>;
   prediction: 'Fraud' | 'Legitimate';
   risk_score: number;
   indicators: string[];
@@ -40,7 +40,7 @@ async function getUserId(): Promise<string | null> {
   return user?.id || null;
 }
 
-function calculateTotalClaim(claimData: Record<string, any>): number {
+function calculateTotalClaim(claimData: Record<string, string | number | boolean>): number {
   // Try to find the total claim amount based on the category fields
   if (claimData.claim_amount) return Number(claimData.claim_amount);
   if (claimData.repair_estimate) return Number(claimData.repair_estimate);
@@ -53,7 +53,7 @@ function calculateTotalClaim(claimData: Record<string, any>): number {
   return injury + property + vehicle;
 }
 
-function buildClaimRecord(claimData: Record<string, any>, mlResult: FlaskPrediction): Omit<ClaimRecord, 'id' | 'created_at'> {
+function buildClaimRecord(claimData: Record<string, string | number | boolean>, mlResult: FlaskPrediction): Omit<ClaimRecord, 'id' | 'created_at'> {
   const totalClaim = calculateTotalClaim(claimData);
   const incidentType = String(claimData.incident_type || claimData.claim_type || claimData.product_name || claimData.cause_of_death || 'Unknown');
 
@@ -71,7 +71,7 @@ function buildClaimRecord(claimData: Record<string, any>, mlResult: FlaskPredict
 
 // ─── ML Prediction ──────────────────────────────────────────────
 
-async function callFlaskML(claimData: Record<string, any>): Promise<FlaskPrediction> {
+async function callFlaskML(claimData: Record<string, string | number | boolean>): Promise<FlaskPrediction> {
   const mlUrl = import.meta.env.VITE_ML_SERVICE_URL || 'http://localhost:5000';
   const response = await fetch(`${mlUrl}/predict`, {
     method: 'POST',
@@ -89,7 +89,7 @@ async function callFlaskML(claimData: Record<string, any>): Promise<FlaskPredict
 
 // ─── Claims API ─────────────────────────────────────────────────
 
-export async function predictClaim(claimData: Record<string, any>): Promise<ClaimRecord> {
+export async function predictClaim(claimData: Record<string, string | number | boolean>): Promise<ClaimRecord> {
   const userId = await getUserId();
   const mlResult = await callFlaskML(claimData);
   const record = buildClaimRecord(claimData, mlResult);
@@ -144,7 +144,7 @@ export async function getClaims(params?: {
 
 // ─── Batch Claims API ───────────────────────────────────────────
 
-export async function _createGuestBatch(claims: Record<string, any>[], claimCategory: string) {
+export async function _createGuestBatch(claims: Record<string, string | number | boolean>[], claimCategory: string) {
   const predictions = await Promise.all(
     claims.map(async (claim) => {
       try {
@@ -157,7 +157,7 @@ export async function _createGuestBatch(claims: Record<string, any>[], claimCate
           indicators: mlResult.indicators || [],
           status: 'success'
         };
-      } catch (err: any) {
+      } catch (err: unknown) {
         return {
           claim_data: claim,
           prediction: 'Unknown',
@@ -180,7 +180,7 @@ export async function _createGuestBatch(claims: Record<string, any>[], claimCate
   };
 }
 
-export async function _createAuthenticatedBatch(userId: string, claims: Record<string, any>[], claimCategory: string) {
+export async function _createAuthenticatedBatch(userId: string, claims: Record<string, string | number | boolean>[], claimCategory: string) {
   const { data: batch, error: batchError } = await insforge.database
     .from('claim_batches')
     .insert([{
@@ -220,7 +220,7 @@ export async function _createAuthenticatedBatch(userId: string, claims: Record<s
       } else {
         throw new Error(saveError?.message || 'Save failed');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       results.push({
         claim_data: claim,
         prediction: 'Unknown',
@@ -250,7 +250,7 @@ export async function _createAuthenticatedBatch(userId: string, claims: Record<s
   };
 }
 
-export async function createBatch(claims: Record<string, any>[], claimCategory: string = 'auto') {
+export async function createBatch(claims: Record<string, string | number | boolean>[], claimCategory: string = 'auto') {
   const userId = await getUserId();
   
   if (!userId) {
@@ -289,7 +289,7 @@ export async function getClaimStats(): Promise<DashboardStats> {
 
   const severityMap = new Map<string, number>();
   for (const claim of allClaims) {
-    const data = claim.input_data as Record<string, any>;
+    const data = claim.input_data as Record<string, string | number | boolean>;
     const severity = data?.incident_severity || data?.weather_conditions || 'Unknown';
     severityMap.set(severity, (severityMap.get(severity) || 0) + 1);
   }
@@ -321,4 +321,15 @@ export async function getClaimStats(): Promise<DashboardStats> {
     severityBreakdown,
     claimAmountDistribution,
   };
+}
+
+export async function getClaimById(id: string): Promise<ClaimRecord> {
+  const { data, error } = await insforge.database
+    .from('claims')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) throw new Error(error.message || 'Failed to fetch claim');
+  return data as ClaimRecord;
 }
