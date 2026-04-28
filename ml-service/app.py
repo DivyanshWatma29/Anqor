@@ -3,7 +3,7 @@ from flask_cors import CORS
 import os
 
 # Import refactored core modules
-from core.preprocessor import preprocess_input, get_prediction_and_probability, get_model_column_count, RAW_FIELDS
+from core.preprocessor import preprocess_input, get_prediction_and_probability, get_model_column_count, get_required_fields, get_available_models
 from core.indicators import generate_indicators
 
 app = Flask(__name__)
@@ -13,8 +13,7 @@ CORS(app)
 def health():
     return jsonify({
         'status': 'healthy',
-        'model': 'SVM',
-        'features': get_model_column_count(),
+        'available_models': get_available_models(),
     })
 
 @app.route('/predict', methods=['POST'])
@@ -24,18 +23,25 @@ def predict():
         if not data:
             return jsonify({'error': 'Request body is required'}), 400
 
-        # Validate required fields
-        missing = [f for f in RAW_FIELDS if f not in data]
+        claim_type = data.get('claim_type', 'auto').lower()
+        if claim_type not in get_available_models():
+            return jsonify({'error': f"Model for claim type '{claim_type}' is not currently available."}), 400
+
+        # Validate required fields for the specific model
+        required_fields = get_required_fields(claim_type)
+        missing = [f for f in required_fields if f not in data]
         if missing:
             return jsonify({
-                'error': f'Missing required fields: {", ".join(missing)}',
+                'error': f'Missing required fields for {claim_type} claim: {", ".join(missing)}',
                 'missing_fields': missing,
             }), 400
 
         # Preprocess and Predict
-        processed = preprocess_input(data)
-        prediction, probability = get_prediction_and_probability(processed)
-        indicators = generate_indicators(data)
+        processed = preprocess_input(claim_type, data)
+        prediction, probability = get_prediction_and_probability(claim_type, processed)
+
+        # Currently, indicators are only tuned for auto insurance
+        indicators = generate_indicators(data) if claim_type == 'auto' else ["No indicators available for this claim type yet."]
 
         return jsonify({
             'prediction': prediction,
