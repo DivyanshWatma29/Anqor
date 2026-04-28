@@ -1,44 +1,51 @@
 import { insforge } from './insforge';
 import type { ClaimData } from '@/components/ClaimForm';
 
-const EXTRACTION_PROMPT = `You are an insurance claim data extractor. Analyze this document (image or PDF of an insurance claim form) and extract exactly these 24 fields. Return ONLY valid JSON with no markdown formatting, no code blocks, no explanation.
+const EXTRACTION_PROMPT = `You are an expert insurance claim adjuster. Analyze this document (image or PDF) and determine if it is a readable, valid insurance claim or related incident report.
 
-Required fields (use exact keys):
+If the document is too blurry, completely illegible, or is NOT related to an insurance claim (e.g. a restaurant receipt, a random selfie, etc.), you MUST reject it.
+
+If it IS a valid claim, intelligently extract the data. Map synonymous terms (e.g. "Crash Type" -> "Collision Type") to fit exactly into our schema. If a field is completely missing, use a reasonable default or 0.
+
+You MUST return ONLY valid JSON with no markdown formatting, no code blocks, and no explanations. Use this exact schema:
+
 {
-  "months_as_customer": <number>,
-  "insured_sex": "<MALE or FEMALE>",
-  "insured_education_level": "<JD, MD, PhD, Masters, Associate, College, High School>",
-  "insured_occupation": "<e.g. exec-managerial, prof-specialty, sales, tech-support, craft-repair, etc.>",
-  "insured_relationship": "<husband, wife, own-child, unmarried, not-in-family, other-relative>",
-  "policy_deductable": <number>,
-  "policy_annual_premium": <number>,
-  "umbrella_limit": <number>,
-  "policy_csl": "<100/300, 250/500, 500/1000>",
-  "capital_gains": <number>,
-  "capital_loss": <number>,
-  "incident_hour_of_the_day": <0-23>,
-  "incident_type": "<Single Vehicle Collision, Multi-vehicle Collision, Vehicle Theft, Parked Car>",
-  "collision_type": "<Side Collision, Rear Collision, Front Collision, ?>",
-  "incident_severity": "<Minor Damage, Major Damage, Total Loss, Trivial Damage>",
-  "authorities_contacted": "<Police, Fire, Ambulance, Other, None>",
-  "number_of_vehicles_involved": <number>,
-  "bodily_injuries": <number>,
-  "witnesses": <number>,
-  "injury_claim": <number>,
-  "property_claim": <number>,
-  "vehicle_claim": <number>,
-  "property_damage": "<YES, NO, ?>",
-  "police_report_available": "<YES, NO, ?>"
+  "is_valid_claim_form": boolean,
+  "rejection_reason": "string explaining why it was rejected, or null if valid",
+  "extracted_data": {
+    "months_as_customer": <number>,
+    "insured_sex": "<MALE or FEMALE>",
+    "insured_education_level": "<JD, MD, PhD, Masters, Associate, College, High School>",
+    "insured_occupation": "<e.g. exec-managerial, prof-specialty, sales, tech-support, craft-repair, etc.>",
+    "insured_relationship": "<husband, wife, own-child, unmarried, not-in-family, other-relative>",
+    "policy_deductable": <number>,
+    "policy_annual_premium": <number>,
+    "umbrella_limit": <number>,
+    "policy_csl": "<100/300, 250/500, 500/1000>",
+    "capital_gains": <number>,
+    "capital_loss": <number>,
+    "incident_hour_of_the_day": <0-23>,
+    "incident_type": "<Single Vehicle Collision, Multi-vehicle Collision, Vehicle Theft, Parked Car>",
+    "collision_type": "<Side Collision, Rear Collision, Front Collision, ?>",
+    "incident_severity": "<Minor Damage, Major Damage, Total Loss, Trivial Damage>",
+    "authorities_contacted": "<Police, Fire, Ambulance, Other, None>",
+    "number_of_vehicles_involved": <number>,
+    "bodily_injuries": <number>,
+    "witnesses": <number>,
+    "injury_claim": <number>,
+    "property_claim": <number>,
+    "vehicle_claim": <number>,
+    "property_damage": "<YES, NO, ?>",
+    "police_report_available": "<YES, NO, ?>"
+  }
 }
 
-Rules:
-- If a field is not found in the document, use a reasonable default
-- For numeric fields, extract the number only (no $ or commas)
-- For categorical fields, use EXACTLY one of the allowed values listed above
-- Return ONLY the JSON object, nothing else`;
+Return ONLY the JSON object.`;
 
 export interface ExtractionResult {
   success: boolean;
+  is_valid_claim_form?: boolean;
+  rejection_reason?: string | null;
   data?: ClaimData;
   raw?: string;
   error?: string;
@@ -85,22 +92,37 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
-function parseExtractedJSON(raw: string): ClaimData {
+function parseExtractedJSON(raw: string): { isValid: boolean; reason: string | null; data: ClaimData | null } {
   let jsonStr = raw.trim();
   const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (codeBlockMatch) jsonStr = codeBlockMatch[1].trim();
 
-  const parsed: Record<string, unknown> = JSON.parse(jsonStr);
+  const parsed: any = JSON.parse(jsonStr);
 
+  if (parsed.is_valid_claim_form === false) {
+    return {
+      isValid: false,
+      reason: parsed.rejection_reason || "The uploaded document is not a valid or readable insurance claim.",
+      data: null
+    };
+  }
+
+  const rawData = parsed.extracted_data || parsed;
   const result: Record<string, string | number> = {};
+
   for (const key of ALL_FIELDS) {
     if (NUMERIC_FIELDS.has(key)) {
-      result[key] = Number(parsed[key]) || 0;
+      result[key] = Number(rawData[key]) || 0;
     } else {
-      result[key] = String(parsed[key] || STRING_DEFAULTS[key] || '');
+      result[key] = String(rawData[key] || STRING_DEFAULTS[key] || '');
     }
   }
-  return result as unknown as ClaimData;
+
+  return {
+    isValid: true,
+    reason: null,
+    data: result as unknown as ClaimData
+  };
 }
 
 export async function extractClaimFromFile(file: File): Promise<ExtractionResult> {
@@ -139,9 +161,26 @@ export async function extractClaimFromFile(file: File): Promise<ExtractionResult
     });
 
     const raw = completion.choices[0]?.message?.content || '';
-    const data = parseExtractedJSON(raw);
+    const parsedResult = parseExtractedJSON(raw);
 
-    return { success: true, data, raw, model: modelId };
+    if (!parsedResult.isValid) {
+      return {
+        success: false,
+        is_valid_claim_form: false,
+        rejection_reason: parsedResult.reason,
+        error: parsedResult.reason || 'Invalid document',
+        model: modelId,
+        raw
+      };
+    }
+
+    return {
+      success: true,
+      is_valid_claim_form: true,
+      data: parsedResult.data!,
+      raw,
+      model: modelId
+    };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : 'AI extraction failed', model: modelId };
   }
