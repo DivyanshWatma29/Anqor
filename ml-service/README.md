@@ -1,3 +1,12 @@
+---
+title: Fraud Shield ML
+emoji: 🛡️
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+---
+
 # Insurance Fraud Detection System
 
 **Python | Flask | Scikit-Learn**

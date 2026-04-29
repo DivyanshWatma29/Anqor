@@ -11,9 +11,8 @@ WORKDIR /app
 COPY --chown=user requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files
-COPY --chown=user app.py .
-COPY --chown=user models/ models/
+# Copy all application files (including core/, templates/, models/, etc.)
+COPY --chown=user . .
 
 # Hugging Face Spaces require listening on port 7860
 EXPOSE 7860
