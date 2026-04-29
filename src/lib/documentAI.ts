@@ -121,7 +121,7 @@ export async function extractClaimFromFile(file: File, category: ClaimCategory =
     const codeBlockMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (codeBlockMatch) jsonStr = codeBlockMatch[1].trim();
 
-    const parsed = JSON.parse(jsonStr) as Record<string, any>;
+    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
 
     if (parsed.is_valid_claim_form === false) {
       return {
@@ -157,7 +157,7 @@ export async function mapCSVHeaders(headers: string[], category: ClaimCategory =
   try {
     const completion = await insforge.ai.chat.completions.create({
       model: modelId,
-      messages: [{ role: 'user', content: content as unknown as any[] }],
+      messages: [{ role: 'user', content: content as string }],
       temperature: 0.1,
     });
 
