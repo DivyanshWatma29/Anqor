@@ -76,7 +76,7 @@ const Navbar = () => {
                   <Link
                     key={link.path}
                     to={link.path}
-                    className={`relative px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                    className={`relative px-3.5 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
                       isActive
                         ? "text-foreground"
                         : "text-muted-foreground hover:text-foreground"
@@ -101,8 +101,9 @@ const Navbar = () => {
             {/* Actions */}
             <div className="flex items-center gap-2">
               <button
+                aria-label="Toggle theme"
                 onClick={() => setTheme(isDark ? "light" : "dark")}
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-300"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors duration-300"
               >
                 <m.div
                   key={isDark ? "sun" : "moon"}
@@ -123,8 +124,9 @@ const Navbar = () => {
                     {user.name}
                   </span>
                   <button
+                    aria-label="Sign out"
                     onClick={signOut}
-                    className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-danger hover:bg-danger/10 transition-all duration-300"
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-danger hover:bg-danger/10 transition-colors duration-300"
                     title="Sign out"
                   >
                     <LogOut className="w-4 h-4" />
@@ -133,7 +135,7 @@ const Navbar = () => {
               ) : (
                 <Link
                   to="/login"
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 text-sm font-medium transition-all duration-300"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 text-sm font-medium transition-colors duration-300"
                 >
                   <LogIn className="w-4 h-4" />
                   <span className="hidden sm:inline">Sign In</span>
@@ -145,14 +147,16 @@ const Navbar = () => {
           {/* Mobile menu button */}
           <div className="flex items-center gap-2 md:hidden">
             <button
+              aria-label="Toggle theme"
               onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-all duration-300"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors duration-300"
             >
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
             <button
+              aria-label="Toggle menu"
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-all"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
             >
               {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>

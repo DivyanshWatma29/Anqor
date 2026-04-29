@@ -131,6 +131,8 @@ const AdminPage = () => {
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="email"
+                name="beta_email"
+                autoComplete="email"
                 placeholder="email@example.com"
                 value={newEmail}
                 onChange={(e) => setNewEmail(e.target.value)}
@@ -185,6 +187,7 @@ const AdminPage = () => {
                     </p>
                   </div>
                   <button
+                    aria-label={}
                     onClick={() => handleRemove(member)}
                     disabled={removingId === member.id}
                     className="ml-3 p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"

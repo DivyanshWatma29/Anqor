@@ -155,7 +155,7 @@ const PredictPage = () => {
               <button
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id); setResult(null); }}
-                className={`relative flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${
+                className={`relative flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium transition-colors duration-300 ${
                   activeTab === tab.id
                     ? "text-foreground"
                     : "text-muted-foreground hover:text-foreground"
@@ -220,7 +220,7 @@ const PredictPage = () => {
                         disabled={isLoading}
                         className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-[hsl(var(--glow-purple))] text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity disabled:opacity-50"
                       >
-                        {isLoading ? "Analyzing..." : "Analyze Extracted Claim"}
+                        {isLoading ? "Analyzing…" : "Analyze Extracted Claim"}
                       </button>
                     </m.div>
                   )}

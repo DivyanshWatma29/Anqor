@@ -37,7 +37,7 @@ const SelectField = memo(({ label, name, value, onChange, options }: SelectField
         onChange={(e) => onChange(name, e.target.value)}
         className="input-premium appearance-none pr-10"
       >
-        <option value="" disabled>Select...</option>
+        <option value="" disabled>Select…</option>
         {options.map((o) => (
           <option key={o} value={o}>{o}</option>
         ))}
@@ -60,6 +60,8 @@ const NumberField = memo(({ label, name, value, onChange }: NumberFieldProps) =>
     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
     <input
       type="number"
+      name={name}
+      autoComplete="off"
       value={value ?? 0}
       onChange={(e) => onChange(name, Number(e.target.value))}
       className="input-premium"
@@ -80,6 +82,8 @@ const TextField = memo(({ label, name, value, onChange }: TextFieldProps) => (
     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
     <input
       type="text"
+      name={name}
+      autoComplete="off"
       value={value || ""}
       onChange={(e) => onChange(name, e.target.value)}
       className="input-premium"
@@ -280,7 +284,7 @@ const ClaimForm = ({ onSubmit, isLoading, category = "auto" }: ClaimFormProps) =
         className="w-full btn-premium py-4 text-base disabled:opacity-50 disabled:cursor-not-allowed mt-8"
       >
         <Shield className="w-5 h-5" />
-        {isLoading ? "Running Analysis..." : "Analyze Claim"}
+        {isLoading ? "Running Analysis…" : "Analyze Claim"}
       </m.button>
     </div>
   );
