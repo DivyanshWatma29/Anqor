@@ -9,7 +9,7 @@ const RiskMeter = ({ score }: RiskMeterProps) => {
   const frameRef = useRef<number>(0);
 
   useEffect(() => {
-    let start = 0;
+    const start = 0;
     const duration = 1500;
     const startTime = performance.now();
 

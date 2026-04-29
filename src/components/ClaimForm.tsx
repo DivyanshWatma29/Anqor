@@ -1,10 +1,10 @@
 import { useState, useCallback, memo, useEffect } from "react";
 import { m } from "framer-motion";
 import { User, FileText, DollarSign, AlertTriangle, ClipboardList, ChevronDown, Shield } from "lucide-react";
-import { INSURANCE_SCHEMAS, ClaimCategory } from "@/schemas/insuranceTypes";
+import { INSURANCE_SCHEMAS, type ClaimCategory, type FieldGroup } from "@/schemas/insuranceTypes";
 
 export interface ClaimData {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 const defaultAutoClaim: ClaimData = {
@@ -24,7 +24,7 @@ interface SelectFieldProps {
   label: string;
   name: string;
   value: string;
-  onChange: (key: string, v: any) => void;
+  onChange: (key: string, v: unknown) => void;
   options: string[];
 }
 
@@ -52,7 +52,7 @@ interface NumberFieldProps {
   label: string;
   name: string;
   value: number;
-  onChange: (key: string, v: any) => void;
+  onChange: (key: string, v: unknown) => void;
 }
 
 const NumberField = memo(({ label, name, value, onChange }: NumberFieldProps) => (
@@ -60,7 +60,7 @@ const NumberField = memo(({ label, name, value, onChange }: NumberFieldProps) =>
     <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
     <input
       type="number"
-      value={value || 0}
+      value={value ?? 0}
       onChange={(e) => onChange(name, Number(e.target.value))}
       className="input-premium"
     />
@@ -72,7 +72,7 @@ interface TextFieldProps {
   label: string;
   name: string;
   value: string;
-  onChange: (key: string, v: any) => void;
+  onChange: (key: string, v: unknown) => void;
 }
 
 const TextField = memo(({ label, name, value, onChange }: TextFieldProps) => (
@@ -119,6 +119,15 @@ const FormSection = memo(({ icon, title, description, children, delay = 0 }: For
 ));
 FormSection.displayName = "FormSection";
 
+const ICON_MAP: Record<string, React.ReactNode> = {
+  user: <User className="w-4 h-4 text-primary" />,
+  file: <FileText className="w-4 h-4 text-primary" />,
+  dollar: <DollarSign className="w-4 h-4 text-primary" />,
+  alert: <AlertTriangle className="w-4 h-4 text-primary" />,
+  clipboard: <ClipboardList className="w-4 h-4 text-primary" />,
+  shield: <Shield className="w-4 h-4 text-primary" />,
+};
+
 interface ClaimFormProps {
   onSubmit: (data: ClaimData) => void;
   isLoading: boolean;
@@ -128,40 +137,72 @@ interface ClaimFormProps {
 const ClaimForm = ({ onSubmit, isLoading, category = "auto" }: ClaimFormProps) => {
   const [form, setForm] = useState<ClaimData>(defaultAutoClaim);
 
-  // Initialize generic form when category changes
   useEffect(() => {
     if (category === "auto") {
       setForm(defaultAutoClaim);
-    } else {
-      const schema = INSURANCE_SCHEMAS[category];
-      const initial: Record<string, any> = {};
-      schema.requiredFields.forEach(f => {
-        initial[f] = "";
-      });
-      setForm(initial);
+      return;
     }
+    const schema = INSURANCE_SCHEMAS[category];
+    const initial: Record<string, string | number | boolean> = {};
+    for (const group of schema.fieldGroups) {
+      for (const field of group.fields) {
+        initial[field.name] = field.defaultValue ?? (field.type === "number" ? 0 : "");
+      }
+    }
+    setForm(initial);
   }, [category]);
 
-  const update = useCallback((key: string, value: any) => {
+  const update = useCallback((key: string, value: unknown) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   }, []);
 
-  const renderDynamicFields = () => {
-    const fields = INSURANCE_SCHEMAS[category].requiredFields;
-    return (
-      <FormSection icon={<FileText className="w-4 h-4 text-primary" />} title={`${INSURANCE_SCHEMAS[category].label} Details`} description="Please fill out all required fields" delay={0.1}>
-        {fields.map(field => {
-          const isNumber = field.includes('amount') || field.includes('age') || field.includes('duration') || field.includes('days') || field.includes('sales') || field.includes('commission') || field.includes('estimate') || field.includes('months') || field.includes('gains') || field.includes('loss') || field.includes('id') || field.includes('limit') || field.includes('premium') || field.includes('deductable') || field.includes('claim') || field.includes('witnesses') || field.includes('injuries') || field.includes('involved') || field.includes('hour');
-          const label = field.replace(/_/g, ' ');
-          
-          if (isNumber) {
-            return <NumberField key={field} label={label} name={field} value={form[field] as number} onChange={update} />;
-          }
-          return <TextField key={field} label={label} name={field} value={form[field] as string} onChange={update} />;
-        })}
-      </FormSection>
-    );
-  };
+  const renderGroupedFields = (groups: FieldGroup[]) =>
+    groups.map((group, gi) => (
+      <div key={group.title}>
+        {gi > 0 && <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent my-2" />}
+        <FormSection
+          icon={ICON_MAP[group.icon]}
+          title={group.title}
+          description={group.description}
+          delay={0.1 * (gi + 1)}
+        >
+          {group.fields.map((field) => {
+            if (field.type === "select" && field.options) {
+              return (
+                <SelectField
+                  key={field.name}
+                  label={field.label}
+                  name={field.name}
+                  value={form[field.name] as string}
+                  onChange={update}
+                  options={field.options}
+                />
+              );
+            }
+            if (field.type === "number") {
+              return (
+                <NumberField
+                  key={field.name}
+                  label={field.label}
+                  name={field.name}
+                  value={form[field.name] as number}
+                  onChange={update}
+                />
+              );
+            }
+            return (
+              <TextField
+                key={field.name}
+                label={field.label}
+                name={field.name}
+                value={form[field.name] as string}
+                onChange={update}
+              />
+            );
+          })}
+        </FormSection>
+      </div>
+    ));
 
   return (
     <div className="glass-card p-6 sm:p-8 space-y-8">
@@ -181,54 +222,54 @@ const ClaimForm = ({ onSubmit, isLoading, category = "auto" }: ClaimFormProps) =
       ) : category === "auto" ? (
         <>
           <FormSection icon={<User className="w-4 h-4 text-primary" />} title="Customer Profile" description="Insured person information" delay={0.1}>
-            <NumberField label="Months as Customer" name="months_as_customer" value={form.months_as_customer} onChange={update} />
-            <SelectField label="Sex" name="insured_sex" value={form.insured_sex} onChange={update} options={["MALE", "FEMALE"]} />
-            <SelectField label="Education Level" name="insured_education_level" value={form.insured_education_level} onChange={update} options={["MD", "PhD", "Associate", "Masters", "High School", "College", "JD"]} />
-            <SelectField label="Occupation" name="insured_occupation" value={form.insured_occupation} onChange={update} options={["exec-managerial", "prof-specialty", "sales", "craft-repair", "machine-op-inspct", "tech-support", "other-service", "adm-clerical", "transport-moving", "handlers-cleaners", "farming-fishing", "protective-serv"]} />
-            <SelectField label="Relationship" name="insured_relationship" value={form.insured_relationship} onChange={update} options={["husband", "wife", "own-child", "not-in-family", "unmarried", "other-relative"]} />
+            <NumberField label="Months as Customer" name="months_as_customer" value={form.months_as_customer as number} onChange={update} />
+            <SelectField label="Sex" name="insured_sex" value={form.insured_sex as string} onChange={update} options={["MALE", "FEMALE"]} />
+            <SelectField label="Education Level" name="insured_education_level" value={form.insured_education_level as string} onChange={update} options={["MD", "PhD", "Associate", "Masters", "High School", "College", "JD"]} />
+            <SelectField label="Occupation" name="insured_occupation" value={form.insured_occupation as string} onChange={update} options={["exec-managerial", "prof-specialty", "sales", "craft-repair", "machine-op-inspct", "tech-support", "other-service", "adm-clerical", "transport-moving", "handlers-cleaners", "farming-fishing", "protective-serv"]} />
+            <SelectField label="Relationship" name="insured_relationship" value={form.insured_relationship as string} onChange={update} options={["husband", "wife", "own-child", "not-in-family", "unmarried", "other-relative"]} />
           </FormSection>
 
           <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
           <FormSection icon={<FileText className="w-4 h-4 text-primary" />} title="Policy Details" description="Insurance policy configuration" delay={0.2}>
-            <NumberField label="Deductible ($)" name="policy_deductable" value={form.policy_deductable} onChange={update} />
-            <NumberField label="Annual Premium ($)" name="policy_annual_premium" value={form.policy_annual_premium} onChange={update} />
-            <NumberField label="Umbrella Limit" name="umbrella_limit" value={form.umbrella_limit} onChange={update} />
-            <SelectField label="Policy CSL" name="policy_csl" value={form.policy_csl} onChange={update} options={["100/300", "250/500", "500/1000"]} />
+            <NumberField label="Deductible ($)" name="policy_deductable" value={form.policy_deductable as number} onChange={update} />
+            <NumberField label="Annual Premium ($)" name="policy_annual_premium" value={form.policy_annual_premium as number} onChange={update} />
+            <NumberField label="Umbrella Limit" name="umbrella_limit" value={form.umbrella_limit as number} onChange={update} />
+            <SelectField label="Policy CSL" name="policy_csl" value={form.policy_csl as string} onChange={update} options={["100/300", "250/500", "500/1000"]} />
           </FormSection>
 
           <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
           <FormSection icon={<DollarSign className="w-4 h-4 text-primary" />} title="Financial Indicators" description="Capital gains and losses" delay={0.3}>
-            <NumberField label="Capital Gains ($)" name="capital_gains" value={form.capital_gains} onChange={update} />
-            <NumberField label="Capital Loss ($)" name="capital_loss" value={form.capital_loss} onChange={update} />
+            <NumberField label="Capital Gains ($)" name="capital_gains" value={form.capital_gains as number} onChange={update} />
+            <NumberField label="Capital Loss ($)" name="capital_loss" value={form.capital_loss as number} onChange={update} />
           </FormSection>
 
           <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
           <FormSection icon={<AlertTriangle className="w-4 h-4 text-primary" />} title="Incident Information" description="Details about the reported incident" delay={0.4}>
-            <NumberField label="Incident Hour (0-23)" name="incident_hour_of_the_day" value={form.incident_hour_of_the_day} onChange={update} />
-            <SelectField label="Incident Type" name="incident_type" value={form.incident_type} onChange={update} options={["Single Vehicle Collision", "Vehicle Theft", "Multi-vehicle Collision", "Parked Car"]} />
-            <SelectField label="Collision Type" name="collision_type" value={form.collision_type} onChange={update} options={["Side Collision", "Rear Collision", "Front Collision", "?"]} />
-            <SelectField label="Severity" name="incident_severity" value={form.incident_severity} onChange={update} options={["Major Damage", "Minor Damage", "Total Loss", "Trivial Damage"]} />
-            <SelectField label="Authorities Contacted" name="authorities_contacted" value={form.authorities_contacted} onChange={update} options={["Police", "Fire", "Ambulance", "Other", "None"]} />
-            <NumberField label="Vehicles Involved" name="number_of_vehicles_involved" value={form.number_of_vehicles_involved} onChange={update} />
-            <NumberField label="Bodily Injuries" name="bodily_injuries" value={form.bodily_injuries} onChange={update} />
-            <NumberField label="Witnesses" name="witnesses" value={form.witnesses} onChange={update} />
+            <NumberField label="Incident Hour (0-23)" name="incident_hour_of_the_day" value={form.incident_hour_of_the_day as number} onChange={update} />
+            <SelectField label="Incident Type" name="incident_type" value={form.incident_type as string} onChange={update} options={["Single Vehicle Collision", "Vehicle Theft", "Multi-vehicle Collision", "Parked Car"]} />
+            <SelectField label="Collision Type" name="collision_type" value={form.collision_type as string} onChange={update} options={["Side Collision", "Rear Collision", "Front Collision", "?"]} />
+            <SelectField label="Severity" name="incident_severity" value={form.incident_severity as string} onChange={update} options={["Major Damage", "Minor Damage", "Total Loss", "Trivial Damage"]} />
+            <SelectField label="Authorities Contacted" name="authorities_contacted" value={form.authorities_contacted as string} onChange={update} options={["Police", "Fire", "Ambulance", "Other", "None"]} />
+            <NumberField label="Vehicles Involved" name="number_of_vehicles_involved" value={form.number_of_vehicles_involved as number} onChange={update} />
+            <NumberField label="Bodily Injuries" name="bodily_injuries" value={form.bodily_injuries as number} onChange={update} />
+            <NumberField label="Witnesses" name="witnesses" value={form.witnesses as number} onChange={update} />
           </FormSection>
 
           <div className="h-px bg-gradient-to-r from-transparent via-border to-transparent" />
 
           <FormSection icon={<ClipboardList className="w-4 h-4 text-primary" />} title="Claim Details" description="Claim amounts and documentation" delay={0.5}>
-            <NumberField label="Injury Claim ($)" name="injury_claim" value={form.injury_claim} onChange={update} />
-            <NumberField label="Property Claim ($)" name="property_claim" value={form.property_claim} onChange={update} />
-            <NumberField label="Vehicle Claim ($)" name="vehicle_claim" value={form.vehicle_claim} onChange={update} />
-            <SelectField label="Property Damage" name="property_damage" value={form.property_damage} onChange={update} options={["YES", "NO", "?"]} />
-            <SelectField label="Police Report" name="police_report_available" value={form.police_report_available} onChange={update} options={["YES", "NO", "?"]} />
+            <NumberField label="Injury Claim ($)" name="injury_claim" value={form.injury_claim as number} onChange={update} />
+            <NumberField label="Property Claim ($)" name="property_claim" value={form.property_claim as number} onChange={update} />
+            <NumberField label="Vehicle Claim ($)" name="vehicle_claim" value={form.vehicle_claim as number} onChange={update} />
+            <SelectField label="Property Damage" name="property_damage" value={form.property_damage as string} onChange={update} options={["YES", "NO", "?"]} />
+            <SelectField label="Police Report" name="police_report_available" value={form.police_report_available as string} onChange={update} options={["YES", "NO", "?"]} />
           </FormSection>
         </>
       ) : (
-        renderDynamicFields()
+        renderGroupedFields(INSURANCE_SCHEMAS[category].fieldGroups)
       )}
 
       <m.button

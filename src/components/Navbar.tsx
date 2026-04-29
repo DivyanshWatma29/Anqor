@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { PrefetchLink as Link } from "../App";
 import { m, AnimatePresence } from "framer-motion";
-import { Shield, Moon, Sun, Menu, X, LogOut, LogIn } from "lucide-react";
+import { Shield, Moon, Sun, Menu, X, LogOut, LogIn, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBetaAccess } from "@/hooks/useBetaAccess";
 import { useTheme } from "@/components/ThemeProvider";
 
 const navLinks = [
@@ -19,10 +20,14 @@ const Navbar = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { isAdmin } = useBetaAccess();
 
   const isDark = theme === "dark" || (theme === "system" && typeof window !== 'undefined' && window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-  const visibleLinks = navLinks.filter((l) => !l.requiresAuth || user);
+  const visibleLinks = [
+    ...navLinks.filter((l) => !l.requiresAuth || user),
+    ...(isAdmin ? [{ label: "Admin", path: "/admin", requiresAuth: true }] : []),
+  ];
 
   const initials = user?.name
     ? user.name.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2)

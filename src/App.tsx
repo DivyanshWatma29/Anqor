@@ -27,6 +27,7 @@ const BulkCheckPage = lazy(() => import("./pages/BulkCheckPage"));
 const ClaimDetailPage = lazy(() => import("./pages/ClaimDetailPage"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const AdminPage = lazy(() => import("./pages/AdminPage"));
 
 const queryClient = new QueryClient();
 
@@ -42,6 +43,7 @@ export const PrefetchLink = ({ to, children, ...props }: LinkProps) => {
     else if (route === "/analytics") import("./pages/AnalyticsPage");
     else if (route === "/about") import("./pages/AboutPage");
     else if (route === "/bulk-check") import("./pages/BulkCheckPage");
+    else if (route === "/admin") import("./pages/AdminPage");
   };
 
   return (
@@ -77,6 +79,7 @@ const AppContent = () => {
               <Route path="/analytics" element={<ProtectedRoute><PageWrapper><AnalyticsPage /></PageWrapper></ProtectedRoute>} />
               <Route path="/claims/:id" element={<ProtectedRoute><PageWrapper><ClaimDetailPage /></PageWrapper></ProtectedRoute>} />
 
+              <Route path="/admin" element={<ProtectedRoute><PageWrapper><AdminPage /></PageWrapper></ProtectedRoute>} />
               <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
             </Routes>
           </Suspense>

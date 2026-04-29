@@ -8,6 +8,7 @@ import type { ClaimData } from '@/components/ClaimForm';
 import { extractClaimFromFile, mapCSVHeaders } from '@/lib/documentAI';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBetaAccess } from '@/hooks/useBetaAccess';
 import { Link } from 'react-router-dom';
 import { INSURANCE_SCHEMAS, type ClaimCategory } from '@/schemas/insuranceTypes';
 
@@ -19,6 +20,7 @@ const BulkCheckPage = () => {
   const [statusText, setStatusText] = useState('Processing claims...');
   const [results, setResults] = useState<ClaimRecord[]>([]);
   const { user } = useAuth();
+  const { isBeta } = useBetaAccess();
 
   const handleFileReady = async (fileResult: ParsedFileResult) => {
     setProcessing(true);
@@ -47,11 +49,11 @@ const BulkCheckPage = () => {
         setStatusText('Transforming and processing claims...');
         const mapping = mappingResult.mapping || {};
 
-        const transformedRows: any[] = [];
+        const transformedRows: unknown[] = [];
         const failedRowIndices: number[] = [];
 
         rawRows.forEach((row, index) => {
-          const transformed: Record<string, any> = {};
+          const transformed: Record<string, string | number | boolean> = {};
           let isValid = true;
 
           for (const [userCol, ourCol] of Object.entries(mapping)) {
@@ -63,7 +65,7 @@ const BulkCheckPage = () => {
           if (Object.keys(transformed).length < Math.floor(EXPECTED_HEADERS.length * 0.2)) isValid = false;
 
           if (isValid) {
-            const finalRow: Record<string, any> = {};
+            const finalRow: Record<string, string | number | boolean> = {};
             for (const key of EXPECTED_HEADERS) {
               // Basic fallback for missing required fields (in a real app, numeric/string checking would be schema-driven)
               finalRow[key] = transformed[key] || 0;
@@ -163,9 +165,9 @@ const BulkCheckPage = () => {
                 className="input-premium appearance-none pr-10 w-full"
                 disabled={processing}
               >
-                {Object.values(INSURANCE_SCHEMAS).map((schema) => (
+                {Object.values(INSURANCE_SCHEMAS).filter((s) => { if (s.id === 'auto') return true; if (!s.isAvailable) return true; return isBeta; }).map((schema) => (
                   <option key={schema.id} value={schema.id} disabled={!schema.isAvailable}>
-                    {schema.label} {!schema.isAvailable && "(Coming Soon)"}
+                    {schema.label}{!schema.isAvailable ? " (Coming Soon)" : ""}
                   </option>
                 ))}
               </select>

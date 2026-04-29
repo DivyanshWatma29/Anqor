@@ -8,6 +8,7 @@ import { predictClaim } from "@/lib/api";
 import { extractClaimFromFile, type ExtractionResult } from "@/lib/documentAI";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useBetaAccess } from "@/hooks/useBetaAccess";
 import { Link } from "react-router-dom";
 import { LogIn, ClipboardList, FileUp, ChevronDown } from "lucide-react";
 import { INSURANCE_SCHEMAS, type ClaimCategory } from "@/schemas/insuranceTypes";
@@ -20,8 +21,8 @@ const PredictPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<PredictionResultData | null>(null);
   const { user } = useAuth();
+  const { isBeta } = useBetaAccess();
 
-  // Document AI state
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionResult, setExtractionResult] = useState<ExtractionResult | null>(null);
   const [extractedData, setExtractedData] = useState<ClaimData | null>(null);
@@ -31,7 +32,6 @@ const PredictPage = () => {
     setResult(null);
 
     try {
-      // Temporarily cast data. In Phase 4, predictClaim will accept (data, claimCategory)
       const payload = { ...data, claim_type: claimCategory } as ClaimData;
       const claim = await predictClaim(payload);
       setResult({
@@ -53,8 +53,7 @@ const PredictPage = () => {
     setResult(null);
 
     try {
-      // In the future, extractClaimFromFile will take claimCategory
-      const extraction = await extractClaimFromFile(file);
+      const extraction = await extractClaimFromFile(file, claimCategory);
       setExtractionResult(extraction);
 
       if (extraction.success && extraction.data) {
@@ -84,6 +83,12 @@ const PredictPage = () => {
     await handleSubmit(extractedData);
   };
 
+  const visibleSchemas = Object.values(INSURANCE_SCHEMAS).filter((schema) => {
+    if (schema.id === "auto") return true;
+    if (!schema.isAvailable) return true;
+    return isBeta;
+  });
+
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: "form", label: "Manual Form", icon: <ClipboardList className="w-4 h-4" /> },
     { id: "document", label: "Upload Document", icon: <FileUp className="w-4 h-4" /> },
@@ -102,9 +107,9 @@ const PredictPage = () => {
           className="text-center mb-8"
         >
           <span className="section-label">Prediction Engine</span>
-          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mt-4">Universal Fraud Detection</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mt-4">Fraud Detection</h1>
           <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
-            Submit claim details or upload a document for AI-powered fraud analysis across multiple insurance categories.
+            Submit claim details or upload a document for AI-powered fraud analysis.
           </p>
           {!user && (
             <Link
@@ -124,12 +129,17 @@ const PredictPage = () => {
             <div className="relative w-full">
               <select
                 value={claimCategory}
-                onChange={(e) => setClaimCategory(e.target.value as ClaimCategory)}
+                onChange={(e) => {
+                  setClaimCategory(e.target.value as ClaimCategory);
+                  setResult(null);
+                  setExtractedData(null);
+                  setExtractionResult(null);
+                }}
                 className="input-premium appearance-none pr-10 w-full"
               >
-                {Object.values(INSURANCE_SCHEMAS).map((schema) => (
+                {visibleSchemas.map((schema) => (
                   <option key={schema.id} value={schema.id} disabled={!schema.isAvailable}>
-                    {schema.label} {!schema.isAvailable && "(Coming Soon)"}
+                    {schema.label}{!schema.isAvailable ? " (Coming Soon)" : ""}
                   </option>
                 ))}
               </select>
@@ -168,13 +178,11 @@ const PredictPage = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left: Input */}
           <div>
             <AnimatePresence mode="wait">
               {activeTab === "form" ? (
                 <m.div key="form" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                  {/* Later, we will pass category to ClaimForm to render dynamic fields */}
-                  <ClaimForm onSubmit={handleSubmit} isLoading={isLoading} />
+                  <ClaimForm onSubmit={handleSubmit} isLoading={isLoading} category={claimCategory} />
                 </m.div>
               ) : (
                 <m.div key="document" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
@@ -187,7 +195,6 @@ const PredictPage = () => {
                     />
                   </div>
 
-                  {/* Extracted fields preview */}
                   {extractedData && (
                     <m.div
                       initial={{ opacity: 0, y: 10 }}
@@ -222,7 +229,6 @@ const PredictPage = () => {
             </AnimatePresence>
           </div>
 
-          {/* Right: Result */}
           <div className="lg:sticky lg:top-24 lg:self-start">
             <AnimatePresence mode="wait">
               {isLoading ? (
