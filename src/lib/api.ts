@@ -36,7 +36,7 @@ function generateClaimId(): string {
 }
 
 async function getUserId(): Promise<string | null> {
-  const { data: { user } } = await insforge.auth.getUser();
+  const { data: { user } } = await insforge.auth.getCurrentUser();
   return user?.id || null;
 }
 
