@@ -97,7 +97,7 @@ const App = () => {
       <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <LazyMotion features={domAnimation}>
-          <BrowserRouter>
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <AuthProvider>
               <Toaster />
               <Sonner />
