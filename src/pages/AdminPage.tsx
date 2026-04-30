@@ -187,7 +187,7 @@ const AdminPage = () => {
                     </p>
                   </div>
                   <button
-                    aria-label={}
+                    aria-label={`Remove ${member.email}`}
                     onClick={() => handleRemove(member)}
                     disabled={removingId === member.id}
                     className="ml-3 p-2 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
