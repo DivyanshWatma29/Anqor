@@ -97,7 +97,8 @@ const HistoryTable = () => {
                 <td className="px-6 py-4">
                   <Link
                     to={`/claims/${entry.id}`}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label={`View details for claim ${entry.id}`}
+                    className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-md transition-all"
                   >
                     <ExternalLink className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground transition-colors" />
                   </Link>
