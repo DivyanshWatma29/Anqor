@@ -1,4 +1,5 @@
 import { insforge } from './insforge';
+import { ML_SERVICE_URL } from './config';
 import type { ClaimData } from '@/components/ClaimForm';
 
 export interface ClaimRecord {
@@ -72,8 +73,7 @@ function buildClaimRecord(claimData: Record<string, string | number | boolean>, 
 // ─── ML Prediction ──────────────────────────────────────────────
 
 async function callFlaskML(claimData: Record<string, string | number | boolean>): Promise<FlaskPrediction> {
-  const mlUrl = import.meta.env.VITE_ML_SERVICE_URL || 'http://localhost:5000';
-  const response = await fetch(`${mlUrl}/predict`, {
+  const response = await fetch(`${ML_SERVICE_URL}/predict`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(claimData),
