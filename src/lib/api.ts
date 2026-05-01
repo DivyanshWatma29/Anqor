@@ -105,7 +105,6 @@ export async function predictClaim(claimData: Record<string, string | number | b
     .single();
 
   if (error) {
-    console.error('Error saving claim:', error);
     // Still return prediction even if save fails
     return { ...record, id: 'temp-id', created_at: new Date().toISOString() };
   }
@@ -239,8 +238,6 @@ export async function _createAuthenticatedBatch(userId: string, claims: Record<s
       processed_claims: processedCount 
     })
     .eq('id', batch.id);
-
-  if (updateError) console.error("Failed to update batch status:", updateError);
 
   return {
     ...batch,
