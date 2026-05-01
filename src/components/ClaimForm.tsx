@@ -1,6 +1,6 @@
 import { useState, useCallback, memo, useEffect } from "react";
 import { m } from "framer-motion";
-import { User, FileText, DollarSign, AlertTriangle, ClipboardList, ChevronDown, Shield } from "lucide-react";
+import { User, FileText, DollarSign, AlertTriangle, ClipboardList, ChevronDown, Shield, Loader2 } from "lucide-react";
 import { INSURANCE_SCHEMAS, type ClaimCategory, type FieldGroup } from "@/schemas/insuranceTypes";
 
 export interface ClaimData {
@@ -30,9 +30,10 @@ interface SelectFieldProps {
 
 const SelectField = memo(({ label, name, value, onChange, options }: SelectFieldProps) => (
   <div className="space-y-2">
-    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
+    <label htmlFor={name} className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
     <div className="relative">
       <select
+        id={name}
         value={value || ""}
         onChange={(e) => onChange(name, e.target.value)}
         className="input-premium appearance-none pr-10"
@@ -57,8 +58,9 @@ interface NumberFieldProps {
 
 const NumberField = memo(({ label, name, value, onChange }: NumberFieldProps) => (
   <div className="space-y-2">
-    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
+    <label htmlFor={name} className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
     <input
+      id={name}
       type="number"
       name={name}
       autoComplete="off"
@@ -79,8 +81,9 @@ interface TextFieldProps {
 
 const TextField = memo(({ label, name, value, onChange }: TextFieldProps) => (
   <div className="space-y-2">
-    <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
+    <label htmlFor={name} className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{label}</label>
     <input
+      id={name}
       type="text"
       name={name}
       autoComplete="off"
@@ -283,7 +286,7 @@ const ClaimForm = ({ onSubmit, isLoading, category = "auto" }: ClaimFormProps) =
         disabled={isLoading || !INSURANCE_SCHEMAS[category].isAvailable}
         className="w-full btn-premium py-4 text-base disabled:opacity-50 disabled:cursor-not-allowed mt-8"
       >
-        <Shield className="w-5 h-5" />
+        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
         {isLoading ? "Running Analysis…" : "Analyze Claim"}
       </m.button>
     </div>
