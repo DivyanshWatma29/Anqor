@@ -1,8 +1,11 @@
 import os
 from huggingface_hub import HfApi
 
-# Use the token you provided previously in the context
-token = "your_token_here"
+# Use the token from the environment variable
+token = os.getenv("HF_TOKEN")
+if not token:
+    raise ValueError("HF_TOKEN environment variable not set")
+
 api = HfApi(token=token)
 
 repo_id = "divyansh123467/fraud-shield-ml"
