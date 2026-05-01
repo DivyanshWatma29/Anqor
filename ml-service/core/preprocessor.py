@@ -50,7 +50,7 @@ def load_models():
                 sample = joblib.load(os.path.join(type_dir, 'sample.joblib'))
                 REGISTRY[claim_type] = {'type': 'pipeline', 'pipeline': pipeline, 'sample': sample}
                 print(f"Loaded {claim_type} (Pipeline) model successfully.")
-            except Exception as e:
+            except (FileNotFoundError, EOFError, ValueError, ImportError, KeyError) as e:
                 print(f"Failed to load {claim_type} pipeline model: {e}")
         
         # Check if legacy style (like the original auto model)
@@ -65,7 +65,7 @@ def load_models():
                     'columns': model_columns, 'numeric_cols': numeric_cols
                 }
                 print(f"Loaded {claim_type} (Legacy) model successfully.")
-            except Exception as e:
+            except (FileNotFoundError, EOFError, ValueError, ImportError, KeyError) as e:
                 print(f"Failed to load {claim_type} legacy model: {e}")
 
 load_models()
