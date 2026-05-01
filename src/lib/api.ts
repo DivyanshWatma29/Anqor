@@ -270,11 +270,31 @@ export async function getClaimStats(): Promise<DashboardStats> {
   const allClaims = (claims as ClaimRecord[]) || [];
 
   const totalClaims = allClaims.length;
-  const fraudClaims = allClaims.filter((c) => c.prediction === 'Fraud');
-  const fraudDetected = fraudClaims.length;
+  let fraudDetected = 0;
+  let totalRiskScore = 0;
+  const severityMap = new Map<string, number>();
+  const amountMap = new Map<string, number>();
+
+  for (const claim of allClaims) {
+    if (claim.prediction === 'Fraud') {
+      fraudDetected++;
+    }
+    totalRiskScore += claim.risk_score;
+
+    const data = claim.input_data as Record<string, string | number | boolean>;
+    const severity = data?.incident_severity || data?.weather_conditions || 'Unknown';
+    severityMap.set(severity, (severityMap.get(severity) || 0) + 1);
+
+    const amt = claim.claim_amount || 0;
+    let range = '0 - 5k';
+    if (amt > 5000 && amt <= 20000) range = '5k - 20k';
+    else if (amt > 20000 && amt <= 50000) range = '20k - 50k';
+    else if (amt > 50000) range = '50k+';
+    amountMap.set(range, (amountMap.get(range) || 0) + 1);
+  }
 
   const avgRiskScore = totalClaims > 0
-    ? Math.round((allClaims.reduce((sum, c) => sum + c.risk_score, 0) / totalClaims) * 10) / 10
+    ? Math.round((totalRiskScore / totalClaims) * 10) / 10
     : 0;
 
   const recent10 = allClaims.slice(0, 10).reverse();
@@ -284,27 +304,11 @@ export async function getClaimStats(): Promise<DashboardStats> {
     legit: claim.prediction === 'Legitimate' ? 100 - claim.risk_score : 0,
   }));
 
-  const severityMap = new Map<string, number>();
-  for (const claim of allClaims) {
-    const data = claim.input_data as Record<string, string | number | boolean>;
-    const severity = data?.incident_severity || data?.weather_conditions || 'Unknown';
-    severityMap.set(severity, (severityMap.get(severity) || 0) + 1);
-  }
   const severityBreakdown = Array.from(severityMap.entries()).map(([severity, count]) => ({
     severity,
     count,
   }));
 
-  const amountMap = new Map<string, number>();
-  for (const claim of allClaims) {
-    const amt = claim.claim_amount || 0;
-    let range = '0 - 5k';
-    if (amt > 5000 && amt <= 20000) range = '5k - 20k';
-    else if (amt > 20000 && amt <= 50000) range = '20k - 50k';
-    else if (amt > 50000) range = '50k+';
-
-    amountMap.set(range, (amountMap.get(range) || 0) + 1);
-  }
   const claimAmountDistribution = Array.from(amountMap.entries()).map(([range, count]) => ({
     range,
     count,
