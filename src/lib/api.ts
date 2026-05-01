@@ -144,30 +144,37 @@ export async function getClaims(params?: {
 // ─── Batch Claims API ───────────────────────────────────────────
 
 export async function _createGuestBatch(claims: Record<string, string | number | boolean>[], claimCategory: string) {
-  const predictions = await Promise.all(
-    claims.map(async (claim) => {
-      try {
-        const payload = { ...claim, claim_type: claimCategory };
-        const mlResult = await callFlaskML(payload);
-        return {
-          claim_data: claim,
-          prediction: mlResult.prediction === 'Y' ? 'Fraud' : 'Legitimate',
-          risk_score: Math.round(mlResult.probability * 100),
-          indicators: mlResult.indicators || [],
-          status: 'success'
-        };
-      } catch (err: unknown) {
-        return {
-          claim_data: claim,
-          prediction: 'Unknown',
-          risk_score: 0,
-          indicators: [],
-          status: 'failed',
-          error: err.message
-        };
-      }
-    })
-  );
+  const predictions = [];
+  const chunkSize = 10;
+
+  for (let i = 0; i < claims.length; i += chunkSize) {
+    const chunk = claims.slice(i, i + chunkSize);
+    const chunkResults = await Promise.all(
+      chunk.map(async (claim) => {
+        try {
+          const payload = { ...claim, claim_type: claimCategory };
+          const mlResult = await callFlaskML(payload);
+          return {
+            claim_data: claim,
+            prediction: mlResult.prediction === 'Y' ? 'Fraud' : 'Legitimate',
+            risk_score: Math.round(mlResult.probability * 100),
+            indicators: mlResult.indicators || [],
+            status: 'success'
+          };
+        } catch (err: unknown) {
+          return {
+            claim_data: claim,
+            prediction: 'Unknown',
+            risk_score: 0,
+            indicators: [],
+            status: 'failed',
+            error: err instanceof Error ? err.message : String(err)
+          };
+        }
+      })
+    );
+    predictions.push(...chunkResults);
+  }
 
   return {
     id: `batch_temp_${Date.now()}`,
@@ -194,40 +201,52 @@ export async function _createAuthenticatedBatch(userId: string, claims: Record<s
 
   let processedCount = 0;
   const results = [];
+  const chunkSize = 10;
 
-  for (const claim of claims) {
-    try {
-      const payload = { ...claim, claim_type: claimCategory };
-      const mlResult = await callFlaskML(payload);
-      const record = buildClaimRecord(payload, mlResult);
-      
-      const { data: savedClaim, error: saveError } = await insforge.database
-        .from('claims')
-        .insert([{ ...record, user_id: userId, batch_id: batch.id }])
-        .select()
-        .single();
-        
-      if (!saveError && savedClaim) {
+  for (let i = 0; i < claims.length; i += chunkSize) {
+    const chunk = claims.slice(i, i + chunkSize);
+    const chunkResults = await Promise.all(
+      chunk.map(async (claim) => {
+        try {
+          const payload = { ...claim, claim_type: claimCategory };
+          const mlResult = await callFlaskML(payload);
+          const record = buildClaimRecord(payload, mlResult);
+
+          const { data: savedClaim, error: saveError } = await insforge.database
+            .from('claims')
+            .insert([{ ...record, user_id: userId, batch_id: batch.id }])
+            .select()
+            .single();
+
+          if (!saveError && savedClaim) {
+            return {
+              claim_data: claim,
+              prediction: record.prediction,
+              risk_score: record.risk_score,
+              indicators: record.indicators,
+              status: 'success'
+            };
+          } else {
+            throw new Error(saveError?.message || 'Save failed');
+          }
+        } catch (err: unknown) {
+          return {
+            claim_data: claim,
+            prediction: 'Unknown',
+            risk_score: 0,
+            indicators: [],
+            status: 'failed',
+            error: err instanceof Error ? err.message : String(err)
+          };
+        }
+      })
+    );
+
+    for (const res of chunkResults) {
+      if (res.status === 'success') {
         processedCount++;
-        results.push({
-          claim_data: claim,
-          prediction: record.prediction,
-          risk_score: record.risk_score,
-          indicators: record.indicators,
-          status: 'success'
-        });
-      } else {
-        throw new Error(saveError?.message || 'Save failed');
       }
-    } catch (err: unknown) {
-      results.push({
-        claim_data: claim,
-        prediction: 'Unknown',
-        risk_score: 0,
-        indicators: [],
-        status: 'failed',
-        error: err.message
-      });
+      results.push(res);
     }
   }
 
