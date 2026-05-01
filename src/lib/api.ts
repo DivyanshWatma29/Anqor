@@ -275,7 +275,11 @@ export async function getClaimStats(): Promise<DashboardStats> {
   const severityMap = new Map<string, number>();
   const amountMap = new Map<string, number>();
 
-  for (const claim of allClaims) {
+  const trendCount = Math.min(10, totalClaims);
+  const trendData = new Array(trendCount);
+
+  for (let i = 0; i < totalClaims; i++) {
+    const claim = allClaims[i];
     if (claim.prediction === 'Fraud') {
       fraudDetected++;
     }
@@ -291,28 +295,30 @@ export async function getClaimStats(): Promise<DashboardStats> {
     else if (amt > 20000 && amt <= 50000) range = '20k - 50k';
     else if (amt > 50000) range = '50k+';
     amountMap.set(range, (amountMap.get(range) || 0) + 1);
+
+    if (i < trendCount) {
+      const trendIndex = trendCount - 1 - i;
+      trendData[trendIndex] = {
+        month: `#${trendIndex + 1}`,
+        fraud: claim.prediction === 'Fraud' ? claim.risk_score : 0,
+        legit: claim.prediction === 'Legitimate' ? 100 - claim.risk_score : 0,
+      };
+    }
   }
 
   const avgRiskScore = totalClaims > 0
     ? Math.round((totalRiskScore / totalClaims) * 10) / 10
     : 0;
 
-  const recent10 = allClaims.slice(0, 10).reverse();
-  const trendData = recent10.map((claim, i) => ({
-    month: `#${i + 1}`,
-    fraud: claim.prediction === 'Fraud' ? claim.risk_score : 0,
-    legit: claim.prediction === 'Legitimate' ? 100 - claim.risk_score : 0,
-  }));
+  const severityBreakdown: { severity: string; count: number }[] = [];
+  for (const [severity, count] of severityMap) {
+    severityBreakdown.push({ severity, count });
+  }
 
-  const severityBreakdown = Array.from(severityMap.entries()).map(([severity, count]) => ({
-    severity,
-    count,
-  }));
-
-  const claimAmountDistribution = Array.from(amountMap.entries()).map(([range, count]) => ({
-    range,
-    count,
-  }));
+  const claimAmountDistribution: { range: string; count: number }[] = [];
+  for (const [range, count] of amountMap) {
+    claimAmountDistribution.push({ range, count });
+  }
 
   return {
     totalClaims,
