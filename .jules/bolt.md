@@ -1,0 +1,3 @@
+## 2024-05-02 - [Avoid Multiple Array Manipulations on Re-Renders]
+**Learning:** Found multiple sequential array operations in data aggregation (e.g. `slice(0, 10).reverse().map(...)` and `Array.from(map.entries()).map(...)`) which cause redundant iterations and intermediate allocations when called during performance-sensitive logic like data-fetching aggregation functions that feed into React rendering loops.
+**Action:** Always favor `Array.from(map, mappingFn)` over chained `Array.from(map.entries()).map(...)`. Also try to implement single-pass or array reverse traversal patterns to eliminate the need for `slice().reverse().map(...)`.

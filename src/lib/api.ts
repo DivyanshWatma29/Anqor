@@ -297,19 +297,28 @@ export async function getClaimStats(): Promise<DashboardStats> {
     ? Math.round((totalRiskScore / totalClaims) * 10) / 10
     : 0;
 
-  const recent10 = allClaims.slice(0, 10).reverse();
-  const trendData = recent10.map((claim, i) => ({
-    month: `#${i + 1}`,
-    fraud: claim.prediction === 'Fraud' ? claim.risk_score : 0,
-    legit: claim.prediction === 'Legitimate' ? 100 - claim.risk_score : 0,
-  }));
+  // ⚡ Bolt: Consolidated sequential array manipulations to reduce intermediate allocations
+  // Avoids slice().reverse().map() chain by iterating backwards over the first up to 10 elements
+  const trendDataCount = Math.min(allClaims.length, 10);
+  const trendData = Array(trendDataCount);
+  for (let i = 0; i < trendDataCount; i++) {
+    // Traverse backwards from the selected slice to replicate slice(0,10).reverse()
+    const claim = allClaims[trendDataCount - 1 - i];
+    trendData[i] = {
+      month: `#${i + 1}`,
+      fraud: claim.prediction === 'Fraud' ? claim.risk_score : 0,
+      legit: claim.prediction === 'Legitimate' ? 100 - claim.risk_score : 0,
+    };
+  }
 
-  const severityBreakdown = Array.from(severityMap.entries()).map(([severity, count]) => ({
+  // ⚡ Bolt: Uses Array.from(map, mapFn) instead of Array.from(map.entries()).map()
+  // to avoid creating intermediate arrays for the Map entries and the final mapping
+  const severityBreakdown = Array.from(severityMap, ([severity, count]) => ({
     severity,
     count,
   }));
 
-  const claimAmountDistribution = Array.from(amountMap.entries()).map(([range, count]) => ({
+  const claimAmountDistribution = Array.from(amountMap, ([range, count]) => ({
     range,
     count,
   }));
