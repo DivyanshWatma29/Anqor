@@ -89,7 +89,8 @@ const BulkResultsTable = ({ claims }: BulkResultsTableProps) => {
                   {!claim.id.startsWith('guest-') && (
                     <Link
                       to={`/claims/${claim.id}`}
-                      className="text-muted-foreground hover:text-primary transition-colors"
+                      aria-label="View claim details"
+                      className="text-muted-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-sm transition-colors"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                     </Link>
