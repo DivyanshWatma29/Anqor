@@ -10,7 +10,8 @@ interface BulkResultsTableProps {
 const BulkResultsTable = ({ claims }: BulkResultsTableProps) => {
   if (claims.length === 0) return null;
 
-  const fraudCount = claims.filter((c) => c.prediction === 'Fraud').length;
+  // Optimization: Count without allocating a new array
+  const fraudCount = claims.reduce((count, c) => count + (c.prediction === 'Fraud' ? 1 : 0), 0);
 
   return (
     <m.div

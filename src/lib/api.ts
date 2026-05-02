@@ -297,22 +297,28 @@ export async function getClaimStats(): Promise<DashboardStats> {
     ? Math.round((totalRiskScore / totalClaims) * 10) / 10
     : 0;
 
-  const recent10 = allClaims.slice(0, 10).reverse();
-  const trendData = recent10.map((claim, i) => ({
-    month: `#${i + 1}`,
-    fraud: claim.prediction === 'Fraud' ? claim.risk_score : 0,
-    legit: claim.prediction === 'Legitimate' ? 100 - claim.risk_score : 0,
-  }));
+  // Optimization: Avoid multiple array allocations by manually iterating
+  const trendData = [];
+  const limit = Math.min(10, allClaims.length);
+  for (let i = limit - 1, j = 0; i >= 0; i--, j++) {
+    const claim = allClaims[i];
+    trendData.push({
+      month: `#${j + 1}`,
+      fraud: claim.prediction === 'Fraud' ? claim.risk_score : 0,
+      legit: claim.prediction === 'Legitimate' ? 100 - claim.risk_score : 0,
+    });
+  }
 
-  const severityBreakdown = Array.from(severityMap.entries()).map(([severity, count]) => ({
-    severity,
-    count,
-  }));
+  // Optimization: Avoid intermediate Array.from() allocations
+  const severityBreakdown = [];
+  for (const [severity, count] of severityMap.entries()) {
+    severityBreakdown.push({ severity, count });
+  }
 
-  const claimAmountDistribution = Array.from(amountMap.entries()).map(([range, count]) => ({
-    range,
-    count,
-  }));
+  const claimAmountDistribution = [];
+  for (const [range, count] of amountMap.entries()) {
+    claimAmountDistribution.push({ range, count });
+  }
 
   return {
     totalClaims,
