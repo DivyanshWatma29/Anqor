@@ -1,0 +1,4 @@
+## 2026-05-02 - Information Leakage in Flask Error Handler
+**Vulnerability:** Raw exception messages were returned in Flask API responses (`jsonify({'error': str(e)})`), potentially exposing sensitive backend logic, stack traces, or configuration details to the client.
+**Learning:** Returning `str(e)` directly violates the principle of "fail securely". Even seemingly harmless exceptions can reveal paths, libraries, or database schemas to an attacker.
+**Prevention:** Catch generic exceptions and return a sanitized, safe message (e.g., `'An internal error occurred.'`) to the client. Simultaneously, log the full exception stack trace internally using `app.logger.exception()` for debugging purposes.
