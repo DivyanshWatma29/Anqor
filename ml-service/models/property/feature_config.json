@@ -1,0 +1,125 @@
+{
+  "model_name": "property",
+  "display_name": "Property / Home Insurance",
+  "feature_columns": [
+    "property_type",
+    "home_age",
+    "claim_type",
+    "weather_conditions",
+    "police_report",
+    "repair_estimate",
+    "is_old_property",
+    "is_high_estimate",
+    "estimate_per_year",
+    "is_severe_weather"
+  ],
+  "numeric_features": [
+    "home_age",
+    "repair_estimate",
+    "is_old_property",
+    "is_high_estimate",
+    "estimate_per_year",
+    "is_severe_weather"
+  ],
+  "categorical_features": [
+    "property_type",
+    "claim_type",
+    "weather_conditions",
+    "police_report"
+  ],
+  "categorical_values": {
+    "property_type": [
+      "Commercial",
+      "Industrial",
+      "Residential"
+    ],
+    "claim_type": [
+      "Burglary",
+      "Fire",
+      "Structural",
+      "Water",
+      "Weather"
+    ],
+    "weather_conditions": [
+      "Hurricane",
+      "Normal",
+      "Snow",
+      "Storm"
+    ],
+    "police_report": [
+      "?",
+      "NO",
+      "YES"
+    ]
+  },
+  "field_groups": [
+    {
+      "title": "Property Information",
+      "description": "Details about the insured property",
+      "icon": "file",
+      "fields": [
+        {
+          "name": "property_type",
+          "label": "Property Type",
+          "type": "select",
+          "options": [
+            "Commercial",
+            "Industrial",
+            "Residential"
+          ]
+        },
+        {
+          "name": "home_age",
+          "label": "Property Age (Years)",
+          "type": "number",
+          "default": 15
+        }
+      ]
+    },
+    {
+      "title": "Claim Details",
+      "description": "Incident and damage information",
+      "icon": "alert",
+      "fields": [
+        {
+          "name": "claim_type",
+          "label": "Claim Type",
+          "type": "select",
+          "options": [
+            "Burglary",
+            "Fire",
+            "Structural",
+            "Water",
+            "Weather"
+          ]
+        },
+        {
+          "name": "weather_conditions",
+          "label": "Weather Conditions",
+          "type": "select",
+          "options": [
+            "Hurricane",
+            "Normal",
+            "Snow",
+            "Storm"
+          ]
+        },
+        {
+          "name": "police_report",
+          "label": "Police Report Filed",
+          "type": "select",
+          "options": [
+            "YES",
+            "NO"
+          ]
+        },
+        {
+          "name": "repair_estimate",
+          "label": "Repair Estimate ($)",
+          "type": "number",
+          "default": 10000
+        }
+      ]
+    }
+  ]
+}

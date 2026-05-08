@@ -1,0 +1,306 @@
+{
+  "model_name": "travel",
+  "display_name": "Travel Insurance",
+  "feature_columns": [
+    "agency_name",
+    "agency_type",
+    "distribution_channel",
+    "product_name",
+    "duration",
+    "destination",
+    "net_sales",
+    "commission",
+    "gender",
+    "age",
+    "sales_per_day",
+    "commission_ratio",
+    "is_long_trip",
+    "is_negative_sales",
+    "age_group"
+  ],
+  "numeric_features": [
+    "duration",
+    "net_sales",
+    "commission",
+    "age",
+    "sales_per_day",
+    "commission_ratio",
+    "is_long_trip",
+    "is_negative_sales"
+  ],
+  "categorical_features": [
+    "agency_name",
+    "agency_type",
+    "distribution_channel",
+    "product_name",
+    "destination",
+    "gender",
+    "age_group"
+  ],
+  "categorical_values": {
+    "agency_name": [
+      "ADM",
+      "ART",
+      "C2B",
+      "CBH",
+      "CCR",
+      "CSR",
+      "CWT",
+      "EPX",
+      "JWT",
+      "JZI",
+      "KML",
+      "LWC",
+      "RAB",
+      "SSI",
+      "TST",
+      "TTW"
+    ],
+    "agency_type": [
+      "Airlines",
+      "Travel Agency"
+    ],
+    "distribution_channel": [
+      "Offline",
+      "Online"
+    ],
+    "product_name": [
+      "1 way Comprehensive Plan",
+      "2 way Comprehensive Plan",
+      "24 Protect",
+      "Annual Gold Plan",
+      "Annual Silver Plan",
+      "Annual Travel Protect Gold",
+      "Annual Travel Protect Platinum",
+      "Annual Travel Protect Silver",
+      "Basic Plan",
+      "Bronze Plan",
+      "Cancellation Plan",
+      "Child Comprehensive Plan",
+      "Comprehensive Plan",
+      "Gold Plan",
+      "Individual Comprehensive Plan",
+      "Premier Plan",
+      "Rental Vehicle Excess Insurance",
+      "Silver Plan",
+      "Single Trip Travel Protect Gold",
+      "Single Trip Travel Protect Platinum",
+      "Single Trip Travel Protect Silver",
+      "Spouse or Parents Comprehensive Plan",
+      "Ticket Protector",
+      "Travel Cruise Protect",
+      "Travel Cruise Protect Family",
+      "Value Plan"
+    ],
+    "destination": [
+      "ALBANIA",
+      "ANGOLA",
+      "ARGENTINA",
+      "ARMENIA",
+      "AUSTRALIA",
+      "AUSTRIA",
+      "AZERBAIJAN",
+      "BAHRAIN",
+      "BANGLADESH",
+      "BARBADOS",
+      "BELARUS",
+      "BELGIUM",
+      "BENIN",
+      "BERMUDA",
+      "BHUTAN",
+      "BOLIVIA",
+      "BOSNIA AND HERZEGOVINA",
+      "BOTSWANA",
+      "BRAZIL",
+      "BRUNEI DARUSSALAM",
+      "BULGARIA",
+      "CAMBODIA",
+      "CAMEROON",
+      "CANADA",
+      "CAYMAN ISLANDS",
+      "CHILE",
+      "CHINA",
+      "COLOMBIA",
+      "COSTA RICA",
+      "CROATIA"
+    ],
+    "gender": [
+      "F",
+      "M"
+    ],
+    "age_group": [
+      "adult",
+      "elderly",
+      "middle",
+      "senior",
+      "young"
+    ]
+  },
+  "field_groups": [
+    {
+      "title": "Agency & Distribution",
+      "description": "Booking source information",
+      "icon": "file",
+      "fields": [
+        {
+          "name": "agency_type",
+          "label": "Agency Type",
+          "type": "select",
+          "options": [
+            "Airlines",
+            "Travel Agency"
+          ]
+        },
+        {
+          "name": "distribution_channel",
+          "label": "Distribution Channel",
+          "type": "select",
+          "options": [
+            "Offline",
+            "Online"
+          ]
+        },
+        {
+          "name": "product_name",
+          "label": "Product Name",
+          "type": "select",
+          "options": [
+            "1 way Comprehensive Plan",
+            "2 way Comprehensive Plan",
+            "24 Protect",
+            "Annual Gold Plan",
+            "Annual Silver Plan",
+            "Annual Travel Protect Gold",
+            "Annual Travel Protect Platinum",
+            "Annual Travel Protect Silver",
+            "Basic Plan",
+            "Bronze Plan",
+            "Cancellation Plan",
+            "Child Comprehensive Plan",
+            "Comprehensive Plan",
+            "Gold Plan",
+            "Individual Comprehensive Plan",
+            "Premier Plan",
+            "Rental Vehicle Excess Insurance",
+            "Silver Plan",
+            "Single Trip Travel Protect Gold",
+            "Single Trip Travel Protect Platinum",
+            "Single Trip Travel Protect Silver",
+            "Spouse or Parents Comprehensive Plan",
+            "Ticket Protector",
+            "Travel Cruise Protect",
+            "Travel Cruise Protect Family",
+            "Value Plan"
+          ]
+        },
+        {
+          "name": "agency_name",
+          "label": "Agency Name",
+          "type": "select",
+          "options": [
+            "ADM",
+            "ART",
+            "C2B",
+            "CBH",
+            "CCR",
+            "CSR",
+            "CWT",
+            "EPX",
+            "JWT",
+            "JZI",
+            "KML",
+            "LWC",
+            "RAB",
+            "SSI",
+            "TST",
+            "TTW"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Trip Details",
+      "description": "Destination and duration",
+      "icon": "alert",
+      "fields": [
+        {
+          "name": "duration",
+          "label": "Duration (Days)",
+          "type": "number",
+          "default": 7
+        },
+        {
+          "name": "destination",
+          "label": "Destination",
+          "type": "select",
+          "options": [
+            "ALBANIA",
+            "ANGOLA",
+            "ARGENTINA",
+            "ARMENIA",
+            "AUSTRALIA",
+            "AUSTRIA",
+            "AZERBAIJAN",
+            "BAHRAIN",
+            "BANGLADESH",
+            "BARBADOS",
+            "BELARUS",
+            "BELGIUM",
+            "BENIN",
+            "BERMUDA",
+            "BHUTAN",
+            "BOLIVIA",
+            "BOSNIA AND HERZEGOVINA",
+            "BOTSWANA",
+            "BRAZIL",
+            "BRUNEI DARUSSALAM",
+            "BULGARIA",
+            "CAMBODIA",
+            "CAMEROON",
+            "CANADA",
+            "CAYMAN ISLANDS",
+            "CHILE",
+            "CHINA",
+            "COLOMBIA",
+            "COSTA RICA",
+            "CROATIA"
+          ]
+        },
+        {
+          "name": "age",
+          "label": "Traveler Age",
+          "type": "number",
+          "default": 30
+        },
+        {
+          "name": "gender",
+          "label": "Gender",
+          "type": "select",
+          "options": [
+            "M",
+            "F"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Financial Details",
+      "description": "Sales and commission amounts",
+      "icon": "dollar",
+      "fields": [
+        {
+          "name": "net_sales",
+          "label": "Net Sales ($)",
+          "type": "number",
+          "default": 100
+        },
+        {
+          "name": "commission",
+          "label": "Commission ($)",
+          "type": "number",
+          "default": 20
+        }
+      ]
+    }
+  ]
+}

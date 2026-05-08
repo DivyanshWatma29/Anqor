@@ -1,0 +1,487 @@
+{
+  "model_name": "auto",
+  "display_name": "Auto Insurance",
+  "feature_columns": [
+    "months_as_customer",
+    "policy_csl",
+    "policy_deductable",
+    "policy_annual_premium",
+    "umbrella_limit",
+    "insured_sex",
+    "insured_education_level",
+    "insured_occupation",
+    "insured_hobbies",
+    "insured_relationship",
+    "capital_gains",
+    "capital_loss",
+    "incident_type",
+    "collision_type",
+    "incident_severity",
+    "authorities_contacted",
+    "incident_hour_of_the_day",
+    "number_of_vehicles_involved",
+    "property_damage",
+    "bodily_injuries",
+    "witnesses",
+    "police_report_available",
+    "injury_claim",
+    "property_claim",
+    "vehicle_claim",
+    "auto_make",
+    "auto_year",
+    "total_claim",
+    "claim_to_premium_ratio",
+    "vehicle_claim_ratio"
+  ],
+  "numeric_features": [
+    "months_as_customer",
+    "policy_deductable",
+    "policy_annual_premium",
+    "umbrella_limit",
+    "capital_gains",
+    "capital_loss",
+    "incident_hour_of_the_day",
+    "number_of_vehicles_involved",
+    "bodily_injuries",
+    "witnesses",
+    "injury_claim",
+    "property_claim",
+    "vehicle_claim",
+    "auto_year",
+    "total_claim",
+    "claim_to_premium_ratio",
+    "vehicle_claim_ratio"
+  ],
+  "categorical_features": [
+    "policy_csl",
+    "insured_sex",
+    "insured_education_level",
+    "insured_occupation",
+    "insured_hobbies",
+    "insured_relationship",
+    "incident_type",
+    "collision_type",
+    "incident_severity",
+    "authorities_contacted",
+    "property_damage",
+    "police_report_available",
+    "auto_make"
+  ],
+  "categorical_values": {
+    "policy_csl": [
+      "100/300",
+      "250/500",
+      "500/1000"
+    ],
+    "insured_sex": [
+      "FEMALE",
+      "MALE"
+    ],
+    "insured_education_level": [
+      "Associate",
+      "College",
+      "High School",
+      "JD",
+      "MD",
+      "Masters",
+      "PhD"
+    ],
+    "insured_occupation": [
+      "adm-clerical",
+      "armed-forces",
+      "craft-repair",
+      "exec-managerial",
+      "farming-fishing",
+      "handlers-cleaners",
+      "machine-op-inspct",
+      "other-service",
+      "priv-house-serv",
+      "prof-specialty",
+      "protective-serv",
+      "sales",
+      "tech-support",
+      "transport-moving"
+    ],
+    "insured_hobbies": [
+      "base-jumping",
+      "basketball",
+      "board-games",
+      "bungie-jumping",
+      "camping",
+      "chess",
+      "cross-fit",
+      "dancing",
+      "exercise",
+      "golf",
+      "hiking",
+      "kayaking",
+      "movies",
+      "paintball",
+      "polo",
+      "reading",
+      "skydiving",
+      "sleeping",
+      "video-games",
+      "yachting"
+    ],
+    "insured_relationship": [
+      "husband",
+      "not-in-family",
+      "other-relative",
+      "own-child",
+      "unmarried",
+      "wife"
+    ],
+    "incident_type": [
+      "Multi-vehicle Collision",
+      "Parked Car",
+      "Single Vehicle Collision",
+      "Vehicle Theft"
+    ],
+    "collision_type": [
+      "Front Collision",
+      "Rear Collision",
+      "Side Collision"
+    ],
+    "incident_severity": [
+      "Major Damage",
+      "Minor Damage",
+      "Total Loss",
+      "Trivial Damage"
+    ],
+    "authorities_contacted": [
+      "Ambulance",
+      "Fire",
+      "Other",
+      "Police"
+    ],
+    "property_damage": [
+      "NO",
+      "YES"
+    ],
+    "police_report_available": [
+      "NO",
+      "YES"
+    ],
+    "auto_make": [
+      "Accura",
+      "Audi",
+      "BMW",
+      "Chevrolet",
+      "Dodge",
+      "Ford",
+      "Honda",
+      "Jeep",
+      "Mercedes",
+      "Nissan",
+      "Saab",
+      "Suburu",
+      "Toyota",
+      "Volkswagen"
+    ]
+  },
+  "field_groups": [
+    {
+      "title": "Customer Profile",
+      "description": "Insured person information",
+      "icon": "user",
+      "fields": [
+        {
+          "name": "months_as_customer",
+          "label": "Months as Customer",
+          "type": "number",
+          "default": 12
+        },
+        {
+          "name": "insured_sex",
+          "label": "Sex",
+          "type": "select",
+          "options": [
+            "MALE",
+            "FEMALE"
+          ]
+        },
+        {
+          "name": "insured_education_level",
+          "label": "Education Level",
+          "type": "select",
+          "options": [
+            "Associate",
+            "College",
+            "High School",
+            "JD",
+            "MD",
+            "Masters",
+            "PhD"
+          ]
+        },
+        {
+          "name": "insured_occupation",
+          "label": "Occupation",
+          "type": "select",
+          "options": [
+            "adm-clerical",
+            "armed-forces",
+            "craft-repair",
+            "exec-managerial",
+            "farming-fishing",
+            "handlers-cleaners",
+            "machine-op-inspct",
+            "other-service",
+            "priv-house-serv",
+            "prof-specialty",
+            "protective-serv",
+            "sales",
+            "tech-support",
+            "transport-moving"
+          ]
+        },
+        {
+          "name": "insured_hobbies",
+          "label": "Hobbies",
+          "type": "select",
+          "options": [
+            "base-jumping",
+            "basketball",
+            "board-games",
+            "bungie-jumping",
+            "camping",
+            "chess",
+            "cross-fit",
+            "dancing",
+            "exercise",
+            "golf",
+            "hiking",
+            "kayaking",
+            "movies",
+            "paintball",
+            "polo",
+            "reading",
+            "skydiving",
+            "sleeping",
+            "video-games",
+            "yachting"
+          ]
+        },
+        {
+          "name": "insured_relationship",
+          "label": "Relationship",
+          "type": "select",
+          "options": [
+            "husband",
+            "not-in-family",
+            "other-relative",
+            "own-child",
+            "unmarried",
+            "wife"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Policy Details",
+      "description": "Insurance policy configuration",
+      "icon": "file",
+      "fields": [
+        {
+          "name": "policy_csl",
+          "label": "Policy CSL",
+          "type": "select",
+          "options": [
+            "100/300",
+            "250/500",
+            "500/1000"
+          ]
+        },
+        {
+          "name": "policy_deductable",
+          "label": "Deductible ($)",
+          "type": "number",
+          "default": 1000
+        },
+        {
+          "name": "policy_annual_premium",
+          "label": "Annual Premium ($)",
+          "type": "number",
+          "default": 1200
+        },
+        {
+          "name": "umbrella_limit",
+          "label": "Umbrella Limit",
+          "type": "number",
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "Financial Indicators",
+      "description": "Capital gains and losses",
+      "icon": "dollar",
+      "fields": [
+        {
+          "name": "capital_gains",
+          "label": "Capital Gains ($)",
+          "type": "number",
+          "default": 0
+        },
+        {
+          "name": "capital_loss",
+          "label": "Capital Loss ($)",
+          "type": "number",
+          "default": 0
+        }
+      ]
+    },
+    {
+      "title": "Incident Information",
+      "description": "Details about the reported incident",
+      "icon": "alert",
+      "fields": [
+        {
+          "name": "incident_hour_of_the_day",
+          "label": "Incident Hour (0-23)",
+          "type": "number",
+          "default": 12
+        },
+        {
+          "name": "incident_type",
+          "label": "Incident Type",
+          "type": "select",
+          "options": [
+            "Multi-vehicle Collision",
+            "Parked Car",
+            "Single Vehicle Collision",
+            "Vehicle Theft"
+          ]
+        },
+        {
+          "name": "collision_type",
+          "label": "Collision Type",
+          "type": "select",
+          "options": [
+            "Front Collision",
+            "Rear Collision",
+            "Side Collision"
+          ]
+        },
+        {
+          "name": "incident_severity",
+          "label": "Severity",
+          "type": "select",
+          "options": [
+            "Major Damage",
+            "Minor Damage",
+            "Total Loss",
+            "Trivial Damage"
+          ]
+        },
+        {
+          "name": "authorities_contacted",
+          "label": "Authorities Contacted",
+          "type": "select",
+          "options": [
+            "Ambulance",
+            "Fire",
+            "Other",
+            "Police"
+          ]
+        },
+        {
+          "name": "number_of_vehicles_involved",
+          "label": "Vehicles Involved",
+          "type": "number",
+          "default": 1
+        },
+        {
+          "name": "bodily_injuries",
+          "label": "Bodily Injuries",
+          "type": "number",
+          "default": 0
+        },
+        {
+          "name": "witnesses",
+          "label": "Witnesses",
+          "type": "number",
+          "default": 1
+        }
+      ]
+    },
+    {
+      "title": "Vehicle Details",
+      "description": "Vehicle information",
+      "icon": "clipboard",
+      "fields": [
+        {
+          "name": "auto_make",
+          "label": "Auto Make",
+          "type": "select",
+          "options": [
+            "Accura",
+            "Audi",
+            "BMW",
+            "Chevrolet",
+            "Dodge",
+            "Ford",
+            "Honda",
+            "Jeep",
+            "Mercedes",
+            "Nissan",
+            "Saab",
+            "Suburu",
+            "Toyota",
+            "Volkswagen"
+          ]
+        },
+        {
+          "name": "auto_year",
+          "label": "Auto Year",
+          "type": "number",
+          "default": 2015
+        }
+      ]
+    },
+    {
+      "title": "Claim Details",
+      "description": "Claim amounts and documentation",
+      "icon": "dollar",
+      "fields": [
+        {
+          "name": "injury_claim",
+          "label": "Injury Claim ($)",
+          "type": "number",
+          "default": 5000
+        },
+        {
+          "name": "property_claim",
+          "label": "Property Claim ($)",
+          "type": "number",
+          "default": 10000
+        },
+        {
+          "name": "vehicle_claim",
+          "label": "Vehicle Claim ($)",
+          "type": "number",
+          "default": 15000
+        },
+        {
+          "name": "property_damage",
+          "label": "Property Damage",
+          "type": "select",
+          "options": [
+            "YES",
+            "NO"
+          ]
+        },
+        {
+          "name": "police_report_available",
+          "label": "Police Report",
+          "type": "select",
+          "options": [
+            "YES",
+            "NO"
+          ]
+        }
+      ]
+    }
+  ]
+}

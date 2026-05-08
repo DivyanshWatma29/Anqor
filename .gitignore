@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+ml-service/__pycache__/
+ml-service/core/__pycache__/
+**/__pycache__/
+*.pyc
+
+# Build output
+dist/
+
+# Environment files
+
+# IDE / tooling
+.vercel/
+.claude/
+.gstack/
+.code-review-graph/
+*.log
+*.tsbuildinfo
+bun.lock
+bun.lockb
+
+# ML artifacts (large files — tracked separately or via Git LFS)
+ml-service/models/**/*.joblib
+ml-service/data/
+ml-service/notebooks/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Session logs
+session_logs/
+
+# AI / dev tools
+CLAUDE.md
+.Jules/
+
+# Internal docs (plans/specs/reports)
+docs/
+FRONTEND_CHANGES.md
+FRONTEND_TODO.md
+TECHNICAL_REPORT.md
+ml-service/README.md
+
+# MCP config (contains API keys)
+.mcp.json
+AGENTS.md
+
+# Duplicate lock files
+pnpm-lock.yaml
+node_modules
+.venv

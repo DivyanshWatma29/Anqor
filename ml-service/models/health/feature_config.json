@@ -1,0 +1,283 @@
+{
+  "model_name": "health",
+  "display_name": "Health Insurance",
+  "feature_columns": [
+    "Patient_Age",
+    "Patient_Gender",
+    "Diagnosis_Code",
+    "Procedure_Code",
+    "Claim_Amount",
+    "Approved_Amount",
+    "Insurance_Type",
+    "Days_Between_Service_and_Claim",
+    "Number_of_Claims_Per_Provider_Monthly",
+    "Provider_Specialty",
+    "Patient_State",
+    "Claim_Status",
+    "Length_of_Stay",
+    "Visit_Type",
+    "Chronic_Condition_Flag",
+    "Prior_Visits_12m",
+    "approval_ratio",
+    "claim_discrepancy",
+    "claim_per_day",
+    "is_high_claim",
+    "visits_per_month"
+  ],
+  "numeric_features": [
+    "Patient_Age",
+    "Procedure_Code",
+    "Claim_Amount",
+    "Approved_Amount",
+    "Days_Between_Service_and_Claim",
+    "Number_of_Claims_Per_Provider_Monthly",
+    "Length_of_Stay",
+    "Chronic_Condition_Flag",
+    "Prior_Visits_12m",
+    "approval_ratio",
+    "claim_discrepancy",
+    "claim_per_day",
+    "is_high_claim",
+    "visits_per_month"
+  ],
+  "categorical_features": [
+    "Patient_Gender",
+    "Diagnosis_Code",
+    "Insurance_Type",
+    "Provider_Specialty",
+    "Patient_State",
+    "Claim_Status",
+    "Visit_Type"
+  ],
+  "categorical_values": {
+    "Patient_Gender": [
+      "Female",
+      "Male"
+    ],
+    "Diagnosis_Code": [
+      "E11.9",
+      "E78.5",
+      "F41.9",
+      "I10",
+      "I25.10",
+      "J06.9",
+      "J18.9",
+      "K21.9",
+      "M54.5",
+      "N39.0"
+    ],
+    "Insurance_Type": [
+      "Medicaid",
+      "Medicare",
+      "Private",
+      "Self-Pay"
+    ],
+    "Provider_Specialty": [
+      "Cardiology",
+      "General Practice",
+      "Internal Medicine",
+      "Neurology",
+      "Orthopedics",
+      "Pulmonology"
+    ],
+    "Patient_State": [
+      "CA",
+      "FL",
+      "GA",
+      "IL",
+      "NY",
+      "OH",
+      "PA",
+      "TX"
+    ],
+    "Claim_Status": [
+      "Approved",
+      "Pending",
+      "Rejected"
+    ],
+    "Visit_Type": [
+      "Emergency",
+      "Inpatient",
+      "Outpatient"
+    ]
+  },
+  "field_groups": [
+    {
+      "title": "Patient Information",
+      "description": "Patient demographics",
+      "icon": "user",
+      "fields": [
+        {
+          "name": "Patient_Age",
+          "label": "Patient Age",
+          "type": "number",
+          "default": 45
+        },
+        {
+          "name": "Patient_Gender",
+          "label": "Patient Gender",
+          "type": "select",
+          "options": [
+            "Male",
+            "Female"
+          ]
+        },
+        {
+          "name": "Patient_State",
+          "label": "Patient State",
+          "type": "select",
+          "options": [
+            "CA",
+            "FL",
+            "GA",
+            "IL",
+            "NY",
+            "OH",
+            "PA",
+            "TX"
+          ]
+        },
+        {
+          "name": "Chronic_Condition_Flag",
+          "label": "Chronic Condition",
+          "type": "number",
+          "default": 0
+        },
+        {
+          "name": "Prior_Visits_12m",
+          "label": "Prior Visits (12 months)",
+          "type": "number",
+          "default": 2
+        }
+      ]
+    },
+    {
+      "title": "Provider Details",
+      "description": "Healthcare provider information",
+      "icon": "file",
+      "fields": [
+        {
+          "name": "Provider_Specialty",
+          "label": "Provider Specialty",
+          "type": "select",
+          "options": [
+            "Cardiology",
+            "General Practice",
+            "Internal Medicine",
+            "Neurology",
+            "Orthopedics",
+            "Pulmonology"
+          ]
+        },
+        {
+          "name": "Number_of_Claims_Per_Provider_Monthly",
+          "label": "Provider Monthly Claims",
+          "type": "number",
+          "default": 30
+        }
+      ]
+    },
+    {
+      "title": "Medical Details",
+      "description": "Diagnosis, procedure, and stay information",
+      "icon": "clipboard",
+      "fields": [
+        {
+          "name": "Diagnosis_Code",
+          "label": "Diagnosis Code (ICD-10)",
+          "type": "select",
+          "options": [
+            "E11.9",
+            "E78.5",
+            "F41.9",
+            "I10",
+            "I25.10",
+            "J06.9",
+            "J18.9",
+            "K21.9",
+            "M54.5",
+            "N39.0"
+          ]
+        },
+        {
+          "name": "Procedure_Code",
+          "label": "Procedure Code (CPT)",
+          "type": "select",
+          "options": [
+            36415,
+            71046,
+            80053,
+            85025,
+            87086,
+            93000,
+            97110,
+            99213,
+            99214
+          ]
+        },
+        {
+          "name": "Insurance_Type",
+          "label": "Insurance Type",
+          "type": "select",
+          "options": [
+            "Medicaid",
+            "Medicare",
+            "Private",
+            "Self-Pay"
+          ]
+        },
+        {
+          "name": "Visit_Type",
+          "label": "Visit Type",
+          "type": "select",
+          "options": [
+            "Emergency",
+            "Inpatient",
+            "Outpatient"
+          ]
+        },
+        {
+          "name": "Length_of_Stay",
+          "label": "Length of Stay (days)",
+          "type": "number",
+          "default": 3
+        },
+        {
+          "name": "Days_Between_Service_and_Claim",
+          "label": "Days Between Service & Claim",
+          "type": "number",
+          "default": 10
+        }
+      ]
+    },
+    {
+      "title": "Claim Financials",
+      "description": "Amounts and claim status",
+      "icon": "dollar",
+      "fields": [
+        {
+          "name": "Claim_Amount",
+          "label": "Claim Amount ($)",
+          "type": "number",
+          "default": 5000
+        },
+        {
+          "name": "Approved_Amount",
+          "label": "Approved Amount ($)",
+          "type": "number",
+          "default": 4500
+        },
+        {
+          "name": "Claim_Status",
+          "label": "Claim Status",
+          "type": "select",
+          "options": [
+            "Approved",
+            "Pending",
+            "Rejected"
+          ]
+        }
+      ]
+    }
+  ]
+}

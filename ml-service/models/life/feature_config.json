@@ -1,0 +1,95 @@
+{
+  "model_name": "life",
+  "display_name": "Life Insurance",
+  "feature_columns": [
+    "policy_duration_months",
+    "cause_of_death",
+    "nominee_relationship",
+    "medical_history_disclosed",
+    "is_early_claim",
+    "is_very_early_claim",
+    "policy_years"
+  ],
+  "numeric_features": [
+    "policy_duration_months",
+    "is_early_claim",
+    "is_very_early_claim",
+    "policy_years"
+  ],
+  "categorical_features": [
+    "cause_of_death",
+    "nominee_relationship",
+    "medical_history_disclosed"
+  ],
+  "categorical_values": {
+    "cause_of_death": [
+      "Accident",
+      "Homicide",
+      "Natural",
+      "Unknown"
+    ],
+    "nominee_relationship": [
+      "Child",
+      "Other",
+      "Spouse",
+      "Unknown"
+    ],
+    "medical_history_disclosed": [
+      "NO",
+      "YES"
+    ]
+  },
+  "field_groups": [
+    {
+      "title": "Policy Details",
+      "description": "Life insurance policy information",
+      "icon": "shield",
+      "fields": [
+        {
+          "name": "policy_duration_months",
+          "label": "Policy Duration (Months)",
+          "type": "number",
+          "default": 24
+        },
+        {
+          "name": "medical_history_disclosed",
+          "label": "Medical History Disclosed",
+          "type": "select",
+          "options": [
+            "NO",
+            "YES"
+          ]
+        }
+      ]
+    },
+    {
+      "title": "Claim Information",
+      "description": "Details about the life claim",
+      "icon": "alert",
+      "fields": [
+        {
+          "name": "cause_of_death",
+          "label": "Cause of Death",
+          "type": "select",
+          "options": [
+            "Accident",
+            "Homicide",
+            "Natural",
+            "Unknown"
+          ]
+        },
+        {
+          "name": "nominee_relationship",
+          "label": "Nominee Relationship",
+          "type": "select",
+          "options": [
+            "Child",
+            "Other",
+            "Spouse",
+            "Unknown"
+          ]
+        }
+      ]
+    }
+  ]
+}
