@@ -1310,7 +1310,7 @@ app.get([`${API_V1_BASE}/auth/sign-in-oauth`, `${API_BASE}/auth/sign-in-oauth`],
 
     // Generate OAuth URL
     client.auth.signInWithOAuth({
-      provider: provider as any,
+      provider: provider,
       options: {
         redirectTo,
       },

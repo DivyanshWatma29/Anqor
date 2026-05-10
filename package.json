@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:server": "node server/bff.js",
+    "dev:server": "node --env-file=.env server/bff.js",
     "dev:ml": "cd ml-service && python3 app.py",
     "build": "vite build",
     "build:dev": "vite build --mode development",
