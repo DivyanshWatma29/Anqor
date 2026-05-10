@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.git/
+.github/
+Proxima/
+ml-service/
+supabase/
+nginx/
+scripts/
+docs/
+*.log
+.DS_Store
