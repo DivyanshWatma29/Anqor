@@ -1,10 +1,12 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { insforge } from '@/lib/insforge';
+import { apiFetch } from '@/lib/http';
+import { analyticsIdentify, analyticsReset, analyticsTrack, ANALYTICS_EVENTS } from '@/lib/analytics';
 
 interface User {
   id: string;
   email: string;
   name?: string;
+  role?: string;
 }
 
 interface AuthContextType {
@@ -29,88 +31,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    insforge.auth.getCurrentUser().then(({ data }) => {
-      if (data?.user) {
-        setUser({
-          id: data.user.id,
-          email: data.user.email,
-          name: data.user.name || data.user.email.split('@')[0],
-        });
-      }
-      setLoading(false);
-    }).catch(() => {
-      setLoading(false);
-    });
+    apiFetch<{ user: User | null }>('/api/v1/auth/me')
+      .then((data) => {
+        setUser(data.user);
+        if (data.user) {
+          analyticsIdentify(data.user);
+        }
+      })
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await insforge.auth.signInWithPassword({ email, password });
-    if (error) throw new Error(error.message || 'Sign in failed');
-    if (data?.user) {
-      setUser({
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.name || data.user.email.split('@')[0],
-      });
-
-      // Ensure profile exists
-      await insforge.database
-        .from('profiles')
-        .upsert([{
-          id: data.user.id,
-          name: data.user.name || data.user.email.split('@')[0],
-          role: 'user',
-        }], { onConflict: 'id' });
-    }
+    const data = await apiFetch<{ user: User }>('/api/v1/auth/sign-in', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    setUser(data.user);
+    analyticsIdentify(data.user);
+    analyticsTrack(ANALYTICS_EVENTS.LOGIN_COMPLETED, { method: 'password' });
   };
 
   const signUp = async (email: string, password: string, name: string): Promise<{ requiresVerification: boolean }> => {
-    const { data, error } = await insforge.auth.signUp({ email, password, name });
-    if (error) throw new Error(error.message || 'Sign up failed');
+    analyticsTrack(ANALYTICS_EVENTS.SIGNUP_STARTED, { method: 'password' });
+    const data = await apiFetch<{ requiresVerification: boolean; user: User | null }>('/api/v1/auth/sign-up', {
+      method: 'POST',
+      body: JSON.stringify({ email, password, name }),
+    });
 
-    if (data?.requireEmailVerification) {
+    if (data.requiresVerification) {
       return { requiresVerification: true };
     }
 
-    // No verification needed — user is signed in
-    if (data?.user) {
-      setUser({
-        id: data.user.id,
-        email: data.user.email,
-        name: name || data.user.email.split('@')[0],
-      });
-
-      await insforge.database.from('profiles').upsert([{
-        id: data.user.id,
-        name,
-        role: 'user',
-      }], { onConflict: 'id' });
+    if (data.user) {
+      setUser(data.user);
+      analyticsIdentify(data.user);
+      analyticsTrack(ANALYTICS_EVENTS.SIGNUP_COMPLETED, { requiresVerification: false });
     }
 
     return { requiresVerification: false };
   };
 
   const verifyEmail = async (email: string, otp: string) => {
-    const { data, error } = await insforge.auth.verifyEmail({ email, otp });
-    if (error) throw new Error(error.message || 'Verification failed');
-
-    if (data?.user) {
-      setUser({
-        id: data.user.id,
-        email: data.user.email,
-        name: data.user.name || data.user.email.split('@')[0],
-      });
-
-      await insforge.database.from('profiles').upsert([{
-        id: data.user.id,
-        name: data.user.name || data.user.email.split('@')[0],
-        role: 'user',
-      }], { onConflict: 'id' });
-    }
+    const data = await apiFetch<{ user: User }>('/api/v1/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    });
+    setUser(data.user);
+    analyticsIdentify(data.user);
+    analyticsTrack(ANALYTICS_EVENTS.EMAIL_VERIFICATION_COMPLETED);
+    analyticsTrack(ANALYTICS_EVENTS.SIGNUP_COMPLETED, { requiresVerification: true });
   };
 
   const signOut = async () => {
-    await insforge.auth.signOut();
+    await apiFetch('/api/v1/auth/sign-out', { method: 'POST' });
+    analyticsReset();
     setUser(null);
   };
 

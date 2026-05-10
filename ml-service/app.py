@@ -47,7 +47,18 @@ from core.shap_explainer import get_shap_explanation
 from core.explainer import generate_fraud_explanation
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
 CORS(app)
+
+MAX_UPLOAD_BYTES = 10 * 1024 * 1024
+ALLOWED_UPLOAD_EXTENSIONS = {'csv', 'xlsx', 'xls', 'pdf', 'docx'}
+ALLOWED_UPLOAD_MIME_TYPES = {
+    'csv': {'text/csv', 'application/csv', 'application/vnd.ms-excel'},
+    'xlsx': {'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'},
+    'xls': {'application/vnd.ms-excel', 'application/octet-stream'},
+    'pdf': {'application/pdf'},
+    'docx': {'application/vnd.openxmlformats-officedocument.wordprocessingml.document'},
+}
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -66,6 +77,29 @@ RATE_LIMITS = {
 
 def _get_client_ip():
     return request.headers.get('X-Forwarded-For', request.remote_addr) or 'unknown'
+
+
+
+def _safe_upload_filename(filename: str) -> str:
+    filename = (filename or '').strip().replace('\', '/').split('/')[-1]
+    return ''.join(ch for ch in filename if ch.isalnum() or ch in {'.', '_', '-'})[:120]
+
+
+def _validate_uploaded_file(file) -> tuple:
+    filename = _safe_upload_filename(file.filename)
+    if not filename or '.' not in filename:
+        raise ValueError('Uploaded file must have a valid filename and extension')
+
+    extension = filename.rsplit('.', 1)[1].lower()
+    if extension not in ALLOWED_UPLOAD_EXTENSIONS:
+        raise ValueError('Unsupported file type')
+
+    mime_type = (file.mimetype or '').lower()
+    allowed_mimes = ALLOWED_UPLOAD_MIME_TYPES.get(extension, set())
+    if mime_type not in allowed_mimes:
+        raise ValueError(f'Unsupported MIME type for .{extension} upload')
+
+    return filename, extension
 
 
 def rate_limit(category='default'):
@@ -480,15 +514,15 @@ def extract():
 
         file = request.files['file']
         claim_type = request.form.get('claim_type', 'auto')
-        filename = file.filename.lower()
+        filename, extension = _validate_uploaded_file(file)
 
-        if filename.endswith('.csv'):
+        if extension == 'csv':
             return _extract_csv(file, claim_type)
-        elif filename.endswith(('.xlsx', '.xls')):
+        elif extension in ('xlsx', 'xls'):
             return _extract_excel(file, claim_type)
-        elif filename.endswith('.pdf'):
+        elif extension == 'pdf':
             return _extract_pdf(file, claim_type)
-        elif filename.endswith('.docx'):
+        elif extension == 'docx':
             return _extract_docx(file, claim_type)
         else:
             return jsonify({
@@ -1266,3 +1300,11 @@ def _risk_level(probability: float) -> str:
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(debug=False, host='0.0.0.0', port=port)
+
+
+@app.errorhandler(413)
+def handle_request_entity_too_large(_error):
+    return jsonify({
+        'error': 'Uploaded file exceeds the 10MB limit',
+        'max_bytes': MAX_UPLOAD_BYTES,
+    }), 413

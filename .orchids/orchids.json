@@ -1,0 +1,11 @@
+{
+  "projectId": "1151f153-15d1-47d5-992e-2811867f0430",
+  "createdAt": 1778249530785,
+  "version": "1.0",
+  "startupCommands": [
+    "bun install; bun dev",
+    "bun install; bun run dev:server",
+    "cd ml-service && pip install -r requirements.txt; python3 app.py"
+  ],
+  "templateId": "nextjs"
+}

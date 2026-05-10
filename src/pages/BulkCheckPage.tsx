@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { m } from 'framer-motion';
 import { FileSpreadsheet, Loader2, LogIn, ChevronDown } from 'lucide-react';
 import FileDropzone, { type ParsedFileResult } from '@/components/FileDropzone';
@@ -10,15 +10,38 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import { INSURANCE_SCHEMAS, type ClaimCategory } from '@/schemas/insuranceTypes';
+import { enqueueOfflineAction } from '@/lib/offlineQueue';
+import { useNetworkStatus } from '@/lib/network';
+import { analyticsTrack, ANALYTICS_EVENTS } from '@/lib/analytics';
+import { saveDraft, loadDraft, clearDraft } from '@/lib/formDraft';
 
 const BulkCheckPage = () => {
-  const [claimCategory, setClaimCategory] = useState<ClaimCategory>("auto");
+  // Load persisted state or use defaults
+  const [claimCategory, setClaimCategory] = useState<ClaimCategory>(() => {
+    const saved = loadDraft<ClaimCategory>('bulk_category');
+    return saved && Object.keys(INSURANCE_SCHEMAS).includes(saved) ? saved : "auto";
+  });
   const [processing, setProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [totalRows, setTotalRows] = useState(0);
   const [statusText, setStatusText] = useState('Processing claims...');
-  const [results, setResults] = useState<ClaimRecord[]>([]);
+  const [results, setResults] = useState<ClaimRecord[]>(() => {
+    return loadDraft<ClaimRecord[]>('bulk_results', 60 * 60 * 1000) || []; // 1 hour
+  });
   const { user } = useAuth();
+  const { isOnline, setQueueSize } = useNetworkStatus();
+
+  // Persist category selection
+  useEffect(() => {
+    saveDraft('bulk_category', claimCategory);
+  }, [claimCategory]);
+
+  // Persist results
+  useEffect(() => {
+    if (results.length > 0) {
+      saveDraft('bulk_results', results);
+    }
+  }, [results]);
 
   const handleFileReady = async (fileResult: ParsedFileResult) => {
     setProcessing(true);
@@ -29,6 +52,7 @@ const BulkCheckPage = () => {
     const EXPECTED_HEADERS = schema.requiredFields;
 
     try {
+      analyticsTrack(ANALYTICS_EVENTS.BULK_PROCESSING_STARTED, { claimCategory, fileType: fileResult.type, userLoggedIn: Boolean(user) });
       if (fileResult.type === 'csv') {
         const rawRows = fileResult.rows;
         if (rawRows.length === 0) throw new Error("CSV file is empty");
@@ -83,7 +107,17 @@ const BulkCheckPage = () => {
           setProgress((prev) => Math.min(prev + 1, transformedRows.length - 1));
         }, 200);
 
+        if (!isOnline) {
+          enqueueOfflineAction('createBatch', { claims: transformedRows, claimCategory });
+          analyticsTrack(ANALYTICS_EVENTS.OFFLINE_ACTION_QUEUED, { actionType: 'createBatch', claimCategory, itemCount: transformedRows.length });
+          setQueueSize((size) => size + 1);
+          toast.info('Offline: batch queued for processing when you reconnect.');
+          setProcessing(false);
+          return;
+        }
+
         const batchResult = await createBatch(transformedRows as ClaimData[], claimCategory);
+        analyticsTrack(ANALYTICS_EVENTS.BULK_PROCESSING_COMPLETED, { claimCategory, totalClaims: batchResult.total_claims, processedClaims: batchResult.processed_claims });
         clearInterval(progressInterval);
         setProgress(transformedRows.length);
 
@@ -130,11 +164,22 @@ const BulkCheckPage = () => {
         setProgress(1);
 
         const payload = { ...extraction.data, claim_type: claimCategory } as ClaimData;
+        if (!isOnline) {
+          enqueueOfflineAction('predictClaim', payload);
+          analyticsTrack(ANALYTICS_EVENTS.OFFLINE_ACTION_QUEUED, { actionType: 'predictClaim', claimCategory, source: 'bulk-document' });
+          setQueueSize((size) => size + 1);
+          toast.info('Offline: document prediction queued for submission when you reconnect.');
+          setProcessing(false);
+          return;
+        }
+
         const claim = await predictClaim(payload);
+        analyticsTrack(ANALYTICS_EVENTS.CLAIM_PREDICTION_COMPLETED, { claimCategory, prediction: claim.prediction, source: 'bulk-document' });
         setResults([claim]);
         toast.success('Document analyzed and prediction complete');
       }
     } catch (err: unknown) {
+      analyticsTrack(ANALYTICS_EVENTS.BULK_PROCESSING_FAILED, { claimCategory, message: err instanceof Error ? err.message : 'unknown_error' });
       toast.error("Processing failed", {
         description: err instanceof Error ? err.message : "Unknown error"
       });

@@ -1,5 +1,6 @@
+import { useState, useEffect } from "react";
 import { m } from "framer-motion";
-import { ShieldCheck, Activity, FileSpreadsheet, PlusCircle, ArrowRight, Clock } from "lucide-react";
+import { ShieldCheck, Activity, FileSpreadsheet, PlusCircle, ArrowRight, Clock, X, Lightbulb } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
@@ -7,6 +8,15 @@ import { getClaims } from "@/lib/api";
 
 const DashboardPage = () => {
   const { user } = useAuth();
+  const [showWelcome, setShowWelcome] = useState(() => {
+    // Check if this is the user's first visit
+    const hasVisited = localStorage.getItem('anqor_dashboard_visited');
+    if (!hasVisited) {
+      localStorage.setItem('anqor_dashboard_visited', 'true');
+      return true;
+    }
+    return false;
+  });
 
   // Fetch recent claims for the user
   const { data: claimsData } = useQuery({
@@ -16,12 +26,53 @@ const DashboardPage = () => {
 
   const recentClaims = claimsData?.data || [];
 
-  return (
-    <div className="relative py-12 sm:py-20">
-      <div className="absolute inset-0 dot-grid opacity-20" />
-      <div className="glow-orb w-[500px] h-[500px] -top-32 -left-32 bg-[hsl(var(--glow-primary))] opacity-[0.05] animate-pulse-glow" />
+    return (
+      <div className="relative py-12 sm:py-20">
+        <div className="absolute inset-0 dot-grid opacity-20" />
+        <div className="glow-orb w-[500px] h-[500px] -top-32 -left-32 bg-[hsl(var(--glow-primary))] opacity-[0.05] animate-pulse-glow" />
 
-      <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          {/* Welcome Banner for First-Time Users */}
+          {showWelcome && (
+            <m.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass-card p-6 sm:p-8 border-l-4 border-l-[hsl(var(--glow-purple))] relative"
+            >
+              <button
+                onClick={() => setShowWelcome(false)}
+                className="absolute top-4 right-4 p-1 rounded-lg hover:bg-secondary/50 transition-colors"
+                aria-label="Dismiss welcome message"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-xl bg-[hsl(var(--glow-purple))]/10 flex items-center justify-center flex-shrink-0">
+                  <Lightbulb className="w-6 h-6 text-[hsl(var(--glow-purple))]" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-foreground mb-2">Welcome to Anqor!</h2>
+                  <p className="text-muted-foreground mb-4">
+                    Get started by analyzing your first insurance claim for fraud detection. Here's what you can do:
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="p-4 rounded-lg bg-card/50 border border-border/50">
+                      <h3 className="font-semibold text-foreground text-sm mb-1">Analyze Claims</h3>
+                      <p className="text-xs text-muted-foreground">Submit claim details or upload documents for instant fraud prediction.</p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-card/50 border border-border/50">
+                      <h3 className="font-semibold text-foreground text-sm mb-1">Bulk Processing</h3>
+                      <p className="text-xs text-muted-foreground">Upload CSV files to process hundreds of claims simultaneously.</p>
+                    </div>
+                    <div className="p-4 rounded-lg bg-card/50 border border-border/50">
+                      <h3 className="font-semibold text-foreground text-sm mb-1">View Analytics</h3>
+                      <p className="text-xs text-muted-foreground">Track fraud trends and model performance over time.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </m.div>
+          )}
         {/* Welcome Header */}
         <m.div
           initial={{ opacity: 0, y: 20 }}
@@ -148,12 +199,23 @@ const DashboardPage = () => {
               </div>
             ) : (
               <div className="p-12 text-center flex flex-col items-center justify-center">
-                <ShieldCheck className="w-12 h-12 text-muted-foreground/30 mb-4" />
-                <h3 className="text-base font-semibold text-foreground mb-1">No claims analyzed yet</h3>
-                <p className="text-sm text-muted-foreground mb-6">Start by analyzing your first insurance claim.</p>
-                <Link to="/predict" className="btn-premium py-2 px-4">
-                  Analyze a Claim
-                </Link>
+                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-primary/10 to-[hsl(var(--glow-purple))]/10 flex items-center justify-center">
+                  <ShieldCheck className="w-10 h-10 text-primary/40" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">No claims analyzed yet</h3>
+                <p className="text-sm text-muted-foreground mb-8 max-w-md">
+                  Start by analyzing your first insurance claim. Our AI will instantly detect potential fraud patterns.
+                </p>
+                <div className="flex items-center gap-4">
+                  <Link to="/predict" className="btn-premium py-2.5 px-6 inline-flex items-center gap-2">
+                    <PlusCircle className="w-4 h-4" />
+                    Analyze a Claim
+                  </Link>
+                  <Link to="/bulk-check" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                    <FileSpreadsheet className="w-4 h-4" />
+                    Bulk Upload
+                  </Link>
+                </div>
               </div>
             )}
           </div>

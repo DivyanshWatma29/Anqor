@@ -1,8 +1,8 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Link, type LinkProps, useLocation } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import DashboardFooter from "@/components/DashboardFooter";
@@ -15,8 +15,14 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import HomeRoute from "@/components/HomeRoute";
 import { SpeedInsights } from "@vercel/speed-insights/react";
+import OfflineBanner from "@/components/OfflineBanner";
+import AnalyticsTracker from "@/components/AnalyticsTracker";
+import { NetworkProvider, useNetworkStatus } from "@/lib/network";
+import { flushOfflineQueue, getOfflineQueue } from "@/lib/offlineQueue";
+import { createBatch, predictClaim } from "@/lib/api";
+import { queryClient } from "@/lib/queryClient";
+import CookieConsentBanner from "@/components/CookieConsent";
 
-// Lazy load pages
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
 const PredictPage = lazy(() => import("./pages/PredictPage"));
 const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage"));
@@ -28,10 +34,9 @@ const ClaimDetailPage = lazy(() => import("./pages/ClaimDetailPage"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
 
-const queryClient = new QueryClient();
-
-// Intent-based prefetching component
 export const PrefetchLink = ({ to, children, ...props }: LinkProps) => {
   const prefetch = () => {
     const route = to.toString();
@@ -44,6 +49,8 @@ export const PrefetchLink = ({ to, children, ...props }: LinkProps) => {
     else if (route === "/about") import("./pages/AboutPage");
     else if (route === "/bulk-check") import("./pages/BulkCheckPage");
     else if (route === "/admin") import("./pages/AdminPage");
+    else if (route === "/forgot-password") import("./pages/ForgotPasswordPage");
+    else if (route === "/reset-password") import("./pages/ResetPasswordPage");
   };
 
   return (
@@ -53,60 +60,94 @@ export const PrefetchLink = ({ to, children, ...props }: LinkProps) => {
   );
 };
 
+function OfflineSyncManager() {
+  const { isOnline, setQueueSize } = useNetworkStatus();
+
+  useEffect(() => {
+    setQueueSize(getOfflineQueue().length);
+  }, [setQueueSize]);
+
+  useEffect(() => {
+    if (!isOnline) return;
+
+    const sync = async () => {
+      const completed = await flushOfflineQueue({
+        predictClaim: (payload) => predictClaim(payload as Record<string, string | number | boolean>),
+        createBatch: (payload) => {
+          const data = payload as { claims: Record<string, string | number | boolean>[]; claimCategory: string };
+          return createBatch(data.claims, data.claimCategory);
+        },
+      });
+
+      if (completed.length > 0) {
+        await queryClient.invalidateQueries();
+      }
+
+      setQueueSize(getOfflineQueue().length);
+    };
+
+    void sync();
+  }, [isOnline, setQueueSize]);
+
+  return null;
+}
+
 const AppContent = () => {
   const location = useLocation();
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+  const isAuthPage = ['/login', '/register', '/forgot-password', '/reset-password'].includes(location.pathname);
 
   return (
     <div className="min-h-screen bg-background flex flex-col transition-colors duration-300">
+      <OfflineBanner />
       {!isAuthPage && <Navbar />}
       <main className="flex-1">
         <ErrorBoundary>
-        <AnimatePresence mode="wait">
-          <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center"><LoadingAnimation /></div>}>
-            <Routes location={location} key={location.pathname}>
-              {/* Public routes */}
-              <Route path="/login" element={<PageWrapper><LoginPage /></PageWrapper>} />
-              <Route path="/register" element={<PageWrapper><RegisterPage /></PageWrapper>} />
-              <Route path="/about" element={<PageWrapper><AboutPage /></PageWrapper>} />
-              <Route path="/predict" element={<PageWrapper><PredictPage /></PageWrapper>} />
-              <Route path="/bulk-check" element={<PageWrapper><BulkCheckPage /></PageWrapper>} />
-
-              {/* Home: Landing for guests, Dashboard for logged-in */}
-              <Route path="/" element={<PageWrapper><HomeRoute /></PageWrapper>} />
-
-              {/* Protected routes (require login) */}
-              <Route path="/analytics" element={<ProtectedRoute><PageWrapper><AnalyticsPage /></PageWrapper></ProtectedRoute>} />
-              <Route path="/claims/:id" element={<ProtectedRoute><PageWrapper><ClaimDetailPage /></PageWrapper></ProtectedRoute>} />
-
-              <Route path="/admin" element={<ProtectedRoute><PageWrapper><AdminPage /></PageWrapper></ProtectedRoute>} />
-              <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
-            </Routes>
-          </Suspense>
-        </AnimatePresence>
+          <AnimatePresence mode="wait">
+            <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center"><LoadingAnimation /></div>}>
+<Routes location={location} key={location.pathname}>
+  <Route path="/login" element={<PageWrapper><LoginPage /></PageWrapper>} />
+  <Route path="/register" element={<PageWrapper><RegisterPage /></PageWrapper>} />
+  <Route path="/forgot-password" element={<PageWrapper><ForgotPasswordPage /></PageWrapper>} />
+  <Route path="/reset-password" element={<PageWrapper><ResetPasswordPage /></PageWrapper>} />
+  <Route path="/about" element={<PageWrapper><AboutPage /></PageWrapper>} />
+  <Route path="/predict" element={<PageWrapper><PredictPage /></PageWrapper>} />
+  <Route path="/bulk-check" element={<PageWrapper><BulkCheckPage /></PageWrapper>} />
+  <Route path="/" element={<PageWrapper><HomeRoute /></PageWrapper>} />
+  <Route path="/analytics" element={<ProtectedRoute><PageWrapper><AnalyticsPage /></PageWrapper></ProtectedRoute>} />
+  <Route path="/claims/:id" element={<ProtectedRoute><PageWrapper><ClaimDetailPage /></PageWrapper></ProtectedRoute>} />
+  <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><PageWrapper><AdminPage /></PageWrapper></ProtectedRoute>} />
+  <Route path="*" element={<PageWrapper><NotFound /></PageWrapper>} />
+</Routes>
+            </Suspense>
+          </AnimatePresence>
         </ErrorBoundary>
       </main>
-      {!isAuthPage && <DashboardFooter />}
-    </div>
-  );
-};
+        {!isAuthPage && <DashboardFooter />}
+        <CookieConsentBanner />
+      </div>
+    );
+  };
 
 const App = () => {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="anqor-theme">
       <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <LazyMotion features={domAnimation}>
-          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <AuthProvider>
-              <Toaster />
-              <Sonner />
-              <SpeedInsights />
-              <AppContent />
-            </AuthProvider>
-          </BrowserRouter>
-        </LazyMotion>
-      </TooltipProvider>
+        <NetworkProvider>
+          <TooltipProvider>
+            <LazyMotion features={domAnimation}>
+              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <AuthProvider>
+                  <OfflineSyncManager />
+                  <Toaster />
+                  <Sonner />
+                  <SpeedInsights />
+                  <AnalyticsTracker />
+                  <AppContent />
+                </AuthProvider>
+              </BrowserRouter>
+            </LazyMotion>
+          </TooltipProvider>
+        </NetworkProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

@@ -54,7 +54,7 @@ const Navbar = () => {
           <Link to="/" className="flex items-center gap-3 group flex-shrink-0">
             <div className="relative">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--glow-purple))] flex items-center justify-center shadow-lg shadow-primary/25">
-                <img src="/logo.svg" alt="Anqor" className="w-6 h-6" />
+                <img src="/logo.svg" alt="Anqor" className="w-6 h-6" loading="lazy" />
               </div>
               <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--glow-purple))] blur-lg opacity-40 group-hover:opacity-60 transition-opacity" />
             </div>

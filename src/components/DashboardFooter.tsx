@@ -74,7 +74,7 @@ const DashboardFooter = () => {
           <div className="md:col-span-4">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--glow-purple))] flex items-center justify-center">
-                <img src="/logo.svg" alt="Anqor" className="w-6 h-6" />
+                <img src="/logo.svg" alt="Anqor" className="w-6 h-6" loading="lazy" />
               </div>
               <span className="font-bold text-xl text-foreground">
                 Anqor
@@ -154,13 +154,14 @@ const DashboardFooter = () => {
 
         {/* Bottom */}
         <div className="border-t border-border/50 mt-10 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-muted-foreground">
-            &copy; {new Date().getFullYear()} Anqor. All rights reserved.
-          </p>
-          <div className="flex gap-4">
-            <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</a>
-            <a href="#" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</a>
-          </div>
+<p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} Anqor. All rights reserved.
+            </p>
+            <div className="flex gap-4">
+              <Link to="/privacy" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Privacy Policy</Link>
+              <Link to="/terms" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Terms of Service</Link>
+              <Link to="/cookies" className="text-xs text-muted-foreground hover:text-foreground transition-colors">Cookie Policy</Link>
+            </div>
         </div>
       </div>
     </footer>

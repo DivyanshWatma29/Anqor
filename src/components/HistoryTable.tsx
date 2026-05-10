@@ -28,13 +28,23 @@ const HistoryTable = () => {
     );
   }
 
-  if (claims.length === 0) {
-    return (
-      <div className="glass-card p-8 text-center text-sm text-muted-foreground">
-        No claims yet. Submit a claim prediction to get started.
-      </div>
-    );
-  }
+    if (claims.length === 0) {
+      return (
+        <div className="glass-card p-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+            <FileSpreadsheet className="w-8 h-8 text-primary/60" />
+          </div>
+          <h3 className="text-base font-semibold text-foreground mb-2">No claims yet</h3>
+          <p className="text-sm text-muted-foreground mb-6 max-w-sm mx-auto">
+            Your prediction history will appear here. Start by analyzing your first insurance claim.
+          </p>
+          <Link to="/predict" className="btn-premium py-2 px-6 inline-flex items-center gap-2">
+            <PlusCircle className="w-4 h-4" />
+            Analyze Your First Claim
+          </Link>
+        </div>
+      );
+    }
 
   return (
     <div className="glass-card overflow-hidden">

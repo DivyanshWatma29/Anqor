@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  # Staging service - mirrors production exactly
+  anqor-staging:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: staging
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    image: anqor:staging
+    container_name: anqor-staging
+    restart: unless-stopped
+    ports:
+      - "8788:8787"  # Different port for staging
+    env_file:
+      - .env.staging
+    volumes:
+      - ./logs-staging:/app/logs
+    networks:
+      - anqor-staging-network
+    environment:
+      - NODE_ENV=staging
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8787/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  anqor-staging-network:
+    driver: bridge

@@ -8,7 +8,14 @@ ml-service/core/__pycache__/
 # Build output
 dist/
 
-# Environment files
+# Environment files (NEVER commit actual env files)
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+!.env.example
+!.env.*.example
 
 # IDE / tooling
 .vercel/
@@ -51,3 +58,18 @@ AGENTS.md
 pnpm-lock.yaml
 node_modules
 .venv
+
+# InsForge & AI agent skills
+.insforge
+.agent
+.agents
+.augment
+.claude
+.cline
+.github/copilot*
+.kilocode
+.qoder
+.qwen
+.roo
+.trae
+.windsurf

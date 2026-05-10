@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { m } from 'framer-motion';
-import { Mail, Lock, LogIn, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, Eye, EyeOff, Chrome } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const FloatingPaths = ({ position }: { position: number }) => {
@@ -49,6 +49,23 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Check for OAuth error
+  const oauthError = searchParams.get('error');
+  if (oauthError === 'oauth_failed' && !error) {
+    setError('OAuth sign-in failed. Please try again or use email/password.');
+  }
+
+  // Check for session expiry (has redirect but no error)
+  const hasRedirect = searchParams.has('redirect');
+  const sessionExpired = hasRedirect && !oauthError && !error;
+  if (sessionExpired) {
+    setError('Your session has expired. Please sign in again.');
+  }
+
+  // Get the redirect URL from query params, default to home
+  const redirectTo = searchParams.get('redirect') || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +73,7 @@ const LoginPage = () => {
     setLoading(true);
     try {
       await signIn(email, password);
-      navigate('/');
+      navigate(redirectTo);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Authentication failed');
     } finally {
@@ -77,7 +94,7 @@ const LoginPage = () => {
             transition={{ delay: 0.3, duration: 0.6 }}
           >
             <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary to-[hsl(var(--glow-purple))] flex items-center justify-center shadow-lg shadow-primary/25 mb-6">
-              <img src="/logo.svg" alt="Anqor" className="w-9 h-9" />
+              <img src="/logo.svg" alt="Anqor" className="w-9 h-9" loading="lazy" />
             </div>
             <h2 className="text-3xl font-bold text-foreground">
               Anqor
@@ -104,7 +121,7 @@ const LoginPage = () => {
             {/* Header */}
             <div className="text-center space-y-3">
               <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-primary to-[hsl(var(--glow-purple))] flex items-center justify-center shadow-lg shadow-primary/25 lg:hidden">
-                <img src="/logo.svg" alt="Anqor" className="w-8 h-8" />
+                <img src="/logo.svg" alt="Anqor" className="w-8 h-8" loading="lazy" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Welcome Back</h1>
@@ -174,15 +191,42 @@ const LoginPage = () => {
                 <LogIn className="w-4 h-4" />
                 {loading ? 'Signing in...' : 'Sign In'}
               </m.button>
-            </form>
+</form>
 
-            {/* Footer */}
-            <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-primary font-medium hover:underline">
-                Create one
-              </Link>
-            </p>
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border/50" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                </div>
+              </div>
+
+              {/* OAuth Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = `/api/v1/auth/sign-in-oauth?provider=google&redirect_to=${encodeURIComponent(window.location.origin)}`;
+                }}
+                className="w-full h-11 rounded-xl border border-border/50 bg-background hover:bg-secondary/50 flex items-center justify-center gap-2 text-sm font-medium transition-colors duration-300"
+              >
+                <Chrome className="w-4 h-4" />
+                Google
+              </button>
+
+              {/* Footer */}
+              <div className="space-y-3 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Don't have an account?{' '}
+                  <Link to="/register" className="text-primary font-medium hover:underline">
+                    Create one
+                  </Link>
+                </p>
+                <Link to="/forgot-password" className="inline-block text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Forgot your password?
+                </Link>
+              </div>
           </div>
         </m.div>
       </div>

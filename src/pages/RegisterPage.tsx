@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { m } from 'framer-motion';
 import { Mail, Lock, UserPlus, AlertCircle, User, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,6 +52,10 @@ const RegisterPage = () => {
   const [verificationStep, setVerificationStep] = useState(false);
   const { signUp, verifyEmail } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  // Get the redirect URL from query params, default to home
+  const redirectTo = searchParams.get('redirect') || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +66,7 @@ const RegisterPage = () => {
       if (requiresVerification) {
         setVerificationStep(true);
       } else {
-        navigate('/');
+        navigate(redirectTo);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Registration failed');
@@ -77,7 +81,7 @@ const RegisterPage = () => {
     setLoading(true);
     try {
       await verifyEmail(email, otp);
-      navigate('/');
+      navigate(redirectTo);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {
@@ -98,7 +102,7 @@ const RegisterPage = () => {
             transition={{ delay: 0.3, duration: 0.6 }}
           >
             <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary to-[hsl(var(--glow-purple))] flex items-center justify-center shadow-lg shadow-primary/25 mb-6">
-              <img src="/logo.svg" alt="Anqor" className="w-9 h-9" />
+              <img src="/logo.svg" alt="Anqor" className="w-9 h-9" loading="lazy" />
             </div>
             <h2 className="text-3xl font-bold text-foreground">
               Anqor
@@ -125,7 +129,7 @@ const RegisterPage = () => {
             {/* Header */}
             <div className="text-center space-y-3">
               <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-primary to-[hsl(var(--glow-purple))] flex items-center justify-center shadow-lg shadow-primary/25 lg:hidden">
-                <img src="/logo.svg" alt="Anqor" className="w-8 h-8" />
+                <img src="/logo.svg" alt="Anqor" className="w-8 h-8" loading="lazy" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-foreground">

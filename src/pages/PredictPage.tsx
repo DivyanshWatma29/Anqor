@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AnimatePresence, m } from "framer-motion";
 import ClaimForm, { type ClaimData } from "@/components/ClaimForm";
 import PredictionResult, { type PredictionResultData } from "@/components/PredictionResult";
@@ -11,44 +11,99 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { LogIn, ClipboardList, FileUp, ChevronDown } from "lucide-react";
 import { INSURANCE_SCHEMAS, type ClaimCategory } from "@/schemas/insuranceTypes";
+import { enqueueOfflineAction } from '@/lib/offlineQueue';
+import { useNetworkStatus } from '@/lib/network';
+import { analyticsTrack, ANALYTICS_EVENTS } from '@/lib/analytics';
+import { saveDraft, loadDraft, clearDraft, hasDraft } from '@/lib/formDraft';
 
 type Tab = "form" | "document";
 
 const PredictPage = () => {
-  const [activeTab, setActiveTab] = useState<Tab>("form");
-  const [claimCategory, setClaimCategory] = useState<ClaimCategory>("auto");
+  // Load persisted state or use defaults
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    const saved = loadDraft<Tab>('predict_tab');
+    return saved || "form";
+  });
+  const [claimCategory, setClaimCategory] = useState<ClaimCategory>(() => {
+    const saved = loadDraft<ClaimCategory>('predict_category');
+    return saved && Object.keys(INSURANCE_SCHEMAS).includes(saved) ? saved : "auto";
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<PredictionResultData | null>(null);
   const { user } = useAuth();
+  const { isOnline, setQueueSize } = useNetworkStatus();
+  const [draftLoaded, setDraftLoaded] = useState(false);
 
   const [isExtracting, setIsExtracting] = useState(false);
   const [extractionResult, setExtractionResult] = useState<ExtractionResult | null>(null);
   const [extractedData, setExtractedData] = useState<ClaimData | null>(null);
 
-  const handleSubmit = async (data: ClaimData) => {
-    setIsLoading(true);
-    setResult(null);
-
-    try {
-      const payload = { ...data, claim_type: claimCategory } as ClaimData;
-      const claim = await predictClaim(payload);
-      setResult({
-        prediction: claim.prediction,
-        probability: claim.risk_score,
-        indicators: claim.indicators,
-        claimType: claimCategory,
-        risk_level: claim.risk_level,
-        fraud_explanation: claim.fraud_explanation,
-        model_confidence: claim.model_confidence,
-        shap_explanation: claim.shap_explanation,
-        confidence_interval: claim.confidence_interval,
+  // Show toast when draft is loaded
+  useEffect(() => {
+    if (draftLoaded) {
+      toast.info("Draft restored", {
+        description: "Your previously entered data has been restored.",
+        action: {
+          label: "Clear",
+          onClick: () => {
+            clearDraft(`claim_form_${claimCategory}`);
+            setDraftLoaded(false);
+            window.location.reload();
+          },
+        },
       });
-    } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Failed to analyze claim. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }, [draftLoaded, claimCategory]);
+
+  // Persist tab selection
+  useEffect(() => {
+    saveDraft('predict_tab', activeTab);
+  }, [activeTab]);
+
+  // Persist category selection
+  useEffect(() => {
+    saveDraft('predict_category', claimCategory);
+  }, [claimCategory]);
+
+    const handleSubmit = async (data: ClaimData) => {
+      setIsLoading(true);
+      setResult(null);
+  
+      try {
+        const payload = { ...data, claim_type: claimCategory } as ClaimData;
+        analyticsTrack(ANALYTICS_EVENTS.CLAIM_PREDICTION_SUBMITTED, { claimCategory, inputMethod: activeTab });
+        if (!isOnline) {
+          enqueueOfflineAction('predictClaim', payload);
+          analyticsTrack(ANALYTICS_EVENTS.OFFLINE_ACTION_QUEUED, { actionType: 'predictClaim', claimCategory });
+          setQueueSize((size) => size + 1);
+          toast.info('Offline: claim queued for submission when you reconnect.');
+          return;
+        }
+        const claim = await predictClaim(payload);
+        analyticsTrack(ANALYTICS_EVENTS.CLAIM_PREDICTION_COMPLETED, { claimCategory, prediction: claim.prediction, riskScore: claim.risk_score });
+        
+        // Clear draft after successful submission
+        clearDraft(`claim_form_${claimCategory}`);
+        setDraftLoaded(false);
+        
+        setResult({
+          prediction: claim.prediction,
+          probability: claim.risk_score,
+          indicators: claim.indicators,
+          claimType: claimCategory,
+          risk_level: claim.risk_level,
+          fraud_explanation: claim.fraud_explanation,
+          model_confidence: claim.model_confidence,
+          shap_explanation: claim.shap_explanation,
+          confidence_interval: claim.confidence_interval,
+        });
+      } catch (err: unknown) {
+        analyticsTrack(ANALYTICS_EVENTS.CLAIM_PREDICTION_FAILED, { claimCategory, message: err instanceof Error ? err.message : 'unknown_error' });
+        toast.error(err instanceof Error ? err.message : "Failed to analyze claim. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
   const handleFileSelected = async (file: File) => {
     setIsExtracting(true);
@@ -57,14 +112,17 @@ const PredictPage = () => {
     setResult(null);
 
     try {
+      analyticsTrack(ANALYTICS_EVENTS.DOCUMENT_UPLOAD_STARTED, { claimCategory, fileType: file.type || 'unknown' });
       const extraction = await extractClaimFromFile(file, claimCategory);
       setExtractionResult(extraction);
 
       if (extraction.success && extraction.data) {
+        analyticsTrack(ANALYTICS_EVENTS.DOCUMENT_EXTRACTION_COMPLETED, { claimCategory });
         setExtractedData(extraction.data);
         toast.success("Fields extracted successfully! Review and submit.");
       } else {
         if (extraction.is_valid_claim_form === false) {
+          analyticsTrack(ANALYTICS_EVENTS.DOCUMENT_EXTRACTION_FAILED, { claimCategory, reason: extraction.rejection_reason || extraction.error || 'rejected' });
           toast.error("Document Rejected", {
             description: extraction.rejection_reason || extraction.error
           });
@@ -76,6 +134,7 @@ const PredictPage = () => {
       }
     } catch (err: unknown) {
       setExtractionResult({ success: false, error: err instanceof Error ? err.message : 'Unknown error', model: '' });
+      analyticsTrack(ANALYTICS_EVENTS.DOCUMENT_EXTRACTION_FAILED, { claimCategory, reason: err instanceof Error ? err.message : 'unknown_error' });
       toast.error("Document analysis failed");
     } finally {
       setIsExtracting(false);
@@ -182,7 +241,7 @@ const PredictPage = () => {
             <AnimatePresence mode="wait">
               {activeTab === "form" ? (
                 <m.div key="form" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                  <ClaimForm onSubmit={handleSubmit} isLoading={isLoading} category={claimCategory} />
+                  <ClaimForm onSubmit={handleSubmit} isLoading={isLoading} category={claimCategory} onDraftLoaded={setDraftLoaded} />
                 </m.div>
               ) : (
                 <m.div key="document" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">

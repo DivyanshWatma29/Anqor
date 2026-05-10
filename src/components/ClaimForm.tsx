@@ -2,6 +2,7 @@ import { useState, useCallback, memo, useEffect } from "react";
 import { m } from "framer-motion";
 import { User, FileText, DollarSign, AlertTriangle, ClipboardList, ChevronDown, Shield, Loader2 } from "lucide-react";
 import { INSURANCE_SCHEMAS, type ClaimCategory, type FieldGroup } from "@/schemas/insuranceTypes";
+import { saveDraft, loadDraft, clearDraft } from "@/lib/formDraft";
 
 export interface ClaimData {
   [key: string]: unknown;
@@ -128,9 +129,10 @@ interface ClaimFormProps {
   onSubmit: (data: ClaimData) => void;
   isLoading: boolean;
   category?: ClaimCategory;
+  onDraftLoaded?: (hasDraft: boolean) => void;
 }
 
-const ClaimForm = ({ onSubmit, isLoading, category = "auto" }: ClaimFormProps) => {
+const ClaimForm = ({ onSubmit, isLoading, category = "auto", onDraftLoaded }: ClaimFormProps) => {
   const [form, setForm] = useState<ClaimData>({});
 
   useEffect(() => {
@@ -141,8 +143,33 @@ const ClaimForm = ({ onSubmit, isLoading, category = "auto" }: ClaimFormProps) =
         initial[field.name] = field.defaultValue ?? "";
       }
     }
-    setForm(initial);
-  }, [category]);
+
+    // Try to load draft for this category
+    const draftKey = `claim_form_${category}`;
+    const savedDraft = loadDraft<Record<string, string | number | boolean>>(draftKey, 24 * 60 * 60 * 1000); // 24 hours
+
+    if (savedDraft) {
+      // Merge saved draft with initial values (draft takes precedence)
+      const merged = { ...initial, ...savedDraft };
+      setForm(merged);
+      onDraftLoaded?.(true);
+    } else {
+      setForm(initial);
+      onDraftLoaded?.(false);
+    }
+  }, [category, onDraftLoaded]);
+
+  // Save draft when form changes (debounced)
+  useEffect(() => {
+    const draftKey = `claim_form_${category}`;
+    const timeoutId = setTimeout(() => {
+      if (Object.keys(form).some(key => form[key] !== "" && form[key] !== 0)) {
+        saveDraft(draftKey, form);
+      }
+    }, 1000); // Debounce 1 second
+
+    return () => clearTimeout(timeoutId);
+  }, [form, category]);
 
   const update = useCallback((key: string, value: unknown) => {
     setForm((prev) => ({ ...prev, [key]: value }));
