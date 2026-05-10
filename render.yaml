@@ -1,26 +1,44 @@
 version: "3.8"
 
 services:
-  anqor-bff:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8787:8787"
-    environment:
-      - NODE_ENV=production
-      - PORT=8787
-      - INSFORGE_URL=${INSFORGE_URL}
-      - INSFORGE_ANON_KEY=${INSFORGE_ANON_KEY}
-      - ML_SERVICE_URL=${ML_SERVICE_URL:-http://localhost:5000}
-      - APP_URL=${APP_URL:-https://fraudai-pi.vercel.app}
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-      - RESEND_API_KEY=${RESEND_API_KEY}
-      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL}
-      - UNSUBSCRIBE_SECRET=${UNSUBSCRIBE_SECRET}
-      - GDPR_SECRET=${GDPR_SECRET}
-      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
-      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
-      - HUGGING_FACE_TOKEN=${HUGGING_FACE_TOKEN}
-    restart: unless-stopped
+  - type: web
+    name: anqor-ml-service
+    env: docker
+    plan: free
+    region: oregon
+    rootDir: ml-service
+    envVars:
+      - key: HUGGING_FACE_TOKEN
+        sync: false
+
+  - type: web
+    name: anqor-bff
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: bun install
+    startCommand: node server/bff.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8787
+      - key: INSFORGE_URL
+        sync: false
+      - key: INSFORGE_ANON_KEY
+        sync: false
+      - key: ML_SERVICE_URL
+        fromService:
+          name: anqor-ml-service
+          type: web
+          property: url
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: JWT_SECRET
+        generateValue: true
+      - key: HUGGING_FACE_TOKEN
+        sync: false
