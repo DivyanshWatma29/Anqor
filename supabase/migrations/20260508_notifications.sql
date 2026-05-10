@@ -57,15 +57,19 @@ ALTER TABLE notification_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_notification_preferences ENABLE ROW LEVEL SECURITY;
 
 -- Policies (allow users to manage their own data)
+DROP POLICY IF EXISTS "Users can manage their own reset tokens" ON password_reset_tokens;
 CREATE POLICY "Users can manage their own reset tokens" ON password_reset_tokens
   FOR ALL USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can manage their own push subscriptions" ON push_subscriptions;
 CREATE POLICY "Users can manage their own push subscriptions" ON push_subscriptions
   FOR ALL USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can view their own notification logs" ON notification_logs;
 CREATE POLICY "Users can view their own notification logs" ON notification_logs
   FOR SELECT USING (recipient = (SELECT email FROM auth.users WHERE id = auth.uid()));
 
+DROP POLICY IF EXISTS "Users can manage their own preferences" ON user_notification_preferences;
 CREATE POLICY "Users can manage their own preferences" ON user_notification_preferences
     FOR ALL USING (user_id = auth.uid());
 
@@ -87,5 +91,6 @@ CREATE INDEX IF NOT EXISTS idx_gdpr_requests_status ON gdpr_requests(status);
 
 ALTER TABLE gdpr_requests ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view their own GDPR requests" ON gdpr_requests;
 CREATE POLICY "Users can view their own GDPR requests" ON gdpr_requests
   FOR SELECT USING (user_id = auth.uid());
