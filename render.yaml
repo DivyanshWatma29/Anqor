@@ -28,10 +28,7 @@ services:
       - key: INSFORGE_ANON_KEY
         sync: false
       - key: ML_SERVICE_URL
-        fromService:
-          name: anqor-ml-service
-          type: web
-          property: url
+        value: https://divyansh123467-fraud-shield-ml.hf.space
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
