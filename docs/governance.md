@@ -1,19 +1,19 @@
 # Governance
 
-ModelFort is currently maintained by Divyansh Watma as the primary maintainer.
+Anqor is currently maintained by Divyansh Watma as the primary maintainer.
 
 ## Decision making
 
-Small bug fixes and documentation changes can be merged after normal review. Changes to the public Python API, report schema, release policy semantics, or security model should be discussed in an issue before implementation.
+Bug fixes and documentation changes can follow normal review. Changes to the public Python API, report schema, metric semantics, or security model should be discussed in an issue before implementation.
 
 ## Contributions
 
-External contributors are encouraged to propose issues and pull requests. Maintainers will prioritize correctness, reproducibility, security, backwards compatibility, and contributor clarity.
+External contributions are welcome when they improve correctness, reproducibility, security, documentation, or contributor experience. Changes should remain focused and independently reviewable.
 
 ## Project health
 
-Project health is measured by release cadence, unresolved issues, test coverage, documentation freshness, dependency health, and meaningful external usage—not by star count alone.
+Project health is assessed using test coverage, release quality, documentation freshness, dependency health, unresolved issues, external contributions, and meaningful usage rather than repository popularity alone.
 
 ## Security decisions
 
-Potential security vulnerabilities should be handled privately according to `SECURITY.md`. Public disclosure should occur only after a fix or mitigation is available where practical.
+Potential vulnerabilities should be reported privately through GitHub's supported security reporting path. Public disclosure should follow investigation and mitigation where practical.

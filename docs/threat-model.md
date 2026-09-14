@@ -1,35 +1,30 @@
-# Threat model
+# Threat Model
 
-Anqor processes potentially sensitive claim information and uploaded documents. This document records the primary security boundaries for contributors.
+Anqor is a local and CI-oriented evaluation toolkit. Its primary inputs are prediction files and other evaluation artifacts supplied by users or automation.
 
 ## Assets
 
-- application credentials and API tokens;
-- claim and document contents supplied by users;
-- model artifacts and configuration;
-- authentication/session state;
-- generated prediction reports.
+- prediction labels and probability scores;
+- evaluation reports;
+- model or dataset artifact metadata;
+- CI credentials and release configuration.
 
 ## Trust boundaries
 
-1. Browser to application API.
-2. Application API to storage/authentication services.
-3. Application API to ML service.
-4. Uploaded files to document parsing and model inference.
-5. External AI provider calls, when document extraction is enabled.
+1. User or CI process to the Anqor CLI.
+2. CSV and JSON-like inputs to parser and validation logic.
+3. Anqor output to CI release decisions and stored reports.
+4. Repository automation to package publication.
 
 ## Threats
 
-- malicious file uploads and parser abuse;
-- oversized requests and resource exhaustion;
-- prompt injection through untrusted document contents;
-- credential leakage through logs or client bundles;
-- unauthorized access to stored prediction history;
-- dependency vulnerabilities;
-- model abuse through repeated automated requests.
+- malformed or adversarial input values;
+- very large inputs causing resource exhaustion;
+- sensitive data accidentally written to reports or logs;
+- dependency or GitHub Action supply-chain vulnerabilities;
+- release automation using unintended credentials or artifacts;
+- misleading evaluation results caused by invalid labels, scores, or policy rules.
 
 ## Mitigations
 
-Contributors should validate file type and size, enforce authentication and authorization at the server boundary, keep secrets server-side, avoid logging raw sensitive inputs, constrain external AI prompts and treat extracted content as untrusted data, and run dependency/security checks in CI.
-
-This is a living document. Security-sensitive architectural changes should update it as part of the same pull request.
+Anqor validates labels, scores, thresholds, gate rules, finite numeric values, and required dataset fields. Core calculations do not execute model or document code. CI runs tests, dependency auditing, and Python-focused CodeQL analysis. Contributors should keep secrets outside source control, avoid sensitive fixtures, review generated reports, and treat all externally supplied evaluation data as untrusted.

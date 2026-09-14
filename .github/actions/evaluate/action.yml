@@ -1,4 +1,4 @@
-name: ModelFort Evaluate
+name: Anqor Evaluate
 description: Evaluate ML predictions and optionally enforce release metrics in CI.
 author: Divyansh Watma
 branding:
@@ -33,7 +33,7 @@ runs:
         GATE: ${{ inputs.gate }}
       run: |
         if [ -n "$GATE" ]; then
-          modelfort evaluate "$PREDICTIONS" --threshold "$THRESHOLD" --gate "$GATE"
+          anqor evaluate "$PREDICTIONS" --threshold "$THRESHOLD" --gate "$GATE"
         else
-          modelfort evaluate "$PREDICTIONS" --threshold "$THRESHOLD"
+          anqor evaluate "$PREDICTIONS" --threshold "$THRESHOLD"
         fi

@@ -1,12 +1,17 @@
 # Changelog
 
-All notable changes to Anqor are documented here.
-
 ## [Unreleased]
 
 ### Added
 
-- Open-source project documentation and contribution workflow.
-- Reusable benchmark package for binary-classification evaluation.
-- Security and code-of-conduct policies.
-- Reproducibility and responsible-use guidance.
+- Framework-neutral binary classification evaluation.
+- Ranking, calibration, score-drift, dataset-quality, and provenance utilities.
+- JSON reports and configurable release gates.
+- A command-line interface and reusable GitHub Action.
+- Automated tests, dependency auditing, and Python-focused CodeQL analysis.
+
+### Changed
+
+- Repository narrowed to the focused Anqor evaluation toolkit.
+- Removed the unrelated application, deployment, frontend, and environment configuration from the public repository.
+- Standardized public package and CLI naming on Anqor.

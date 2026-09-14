@@ -1,40 +1,37 @@
 # Architecture
 
-ModelFort separates evaluation logic from the application layer so that release assurance can be reused in any ML stack.
+Anqor separates evaluation logic from the model or application that produced the predictions.
 
 ```text
-             model / pipeline
-                    |
-             prediction scores
-                    |
-        +-----------v------------+
-        |     ModelFort Core     |
-        | metrics / calibration  |
-        | quality / drift / gate |
-        +-----------+------------+
-                    |
-       +------------+-------------+
-       |                          |
-   JSON evidence             CI exit code
-       |                          |
-       v                          v
- dashboards / audit        deployment gate
+model / pipeline
+      |
+ labels + scores
+      |
+      v
++------------------------+
+|      Anqor Core        |
+| metrics / calibration  |
+| drift / quality / gate |
+| provenance / reports   |
++-----------+------------+
+            |
+      +-----+-----+
+      |           |
+   JSON report  exit code
+      |           |
+ experiment log   CI gate
 ```
 
-## Boundaries
+## Boundary
 
-The core Python package accepts ordinary Python values. It deliberately does not own model training, databases, authentication, or cloud credentials.
+The core toolkit accepts ordinary Python values. It does not train models, manage application authentication, store customer records, or require cloud credentials.
 
-The application layer can add persistence, visualisation, authentication and model-specific adapters. This prevents the reusable evaluator from being coupled to one vendor or web framework.
+## Evaluation flow
 
-## Evidence model
+1. A model or pipeline produces labels and/or probability scores.
+2. Anqor validates the inputs and computes evaluation metrics.
+3. Optional quality, calibration, drift, and provenance checks add context.
+4. A policy gate evaluates explicit `min` and `max` rules.
+5. The CLI emits machine-readable JSON and uses a non-zero exit code when a configured gate fails.
 
-A release evaluation consists of:
-
-- inputs: labels, scores and optional metadata;
-- metrics: discrimination, classification and calibration statistics;
-- policy: explicit threshold rules;
-- provenance: artifact hashes and evaluation metadata;
-- outcome: pass/fail with human-readable failures.
-
-The JSON report is intended to become the stable integration surface for CI and other tools.
+Keeping these concerns separate makes the evaluator reusable across ML frameworks and CI systems.

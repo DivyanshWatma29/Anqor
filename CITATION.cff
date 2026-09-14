@@ -5,16 +5,14 @@ type: software
 authors:
   - family-names: Watma
     given-names: Divyansh
-    orcid: ""
 repository-code: "https://github.com/DivyanshWatma29/Anqor"
 license: MIT
 version: "0.1.0"
-date-released: "2026-09-14"
-abstract: "Open, reproducible tooling for explainable tabular fraud-risk model evaluation."
+abstract: "Framework-neutral, reproducible tooling for machine-learning prediction evaluation and release assurance."
 keywords:
   - machine-learning
-  - fraud-detection
-  - explainable-ai
   - model-evaluation
-  - insurance
+  - calibration
+  - drift-detection
+  - mlops
   - responsible-ai

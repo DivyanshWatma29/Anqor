@@ -1,16 +1,14 @@
 # Contributing to Anqor
 
-Thank you for contributing. Anqor values reproducible experiments, small reviewable changes, and clear documentation.
+Anqor values small, reviewable changes, reproducible evaluation, and clear documentation.
 
 ## Before opening an issue
 
-Search existing issues first. For bugs, include the affected version/commit, environment, reproduction steps, expected behavior, actual behavior, and relevant logs without secrets or personal data.
+Search existing issues first. For bugs, include the affected version or commit, environment, reproduction steps, expected behavior, actual behavior, and relevant logs without secrets or personal data.
 
-For feature requests, explain the user problem and why the proposed behavior belongs in the project rather than only describing an implementation.
+For feature requests, describe the user problem and why the change belongs in Anqor.
 
 ## Development
-
-For the Python benchmark:
 
 ```bash
 cd python/anqor_benchmark
@@ -20,13 +18,10 @@ pip install -e '.[dev]'
 pytest
 ```
 
-For frontend changes:
+Run the example from the repository root:
 
 ```bash
-npm ci
-npm run lint
-npm test
-npm run build
+python examples/evaluate_predictions.py
 ```
 
 ## Pull requests
@@ -35,10 +30,8 @@ npm run build
 - Add or update tests for behavior changes.
 - Update documentation when public behavior changes.
 - Do not commit secrets, generated credentials, private datasets, or real claimant information.
-- Explain important design or metric changes in the PR description.
-
-Maintainers may ask for benchmarks, additional tests, or a smaller patch when a change is difficult to review.
+- Explain important metric or policy changes in the PR description.
 
 ## Commit messages
 
-Prefer concise conventional prefixes such as `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, and `chore:`.
+Prefer concise prefixes such as `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, and `chore:`.
