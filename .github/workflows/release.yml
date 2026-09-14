@@ -26,7 +26,7 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
-    if: ${{ vars.MODelfORT_PUBLISH == 'true' }}
+    if: ${{ vars.MODELFORT_PUBLISH == 'true' }}
     permissions:
       id-token: write
     environment: pypi
