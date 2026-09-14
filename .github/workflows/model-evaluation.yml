@@ -15,7 +15,7 @@ jobs:
   evaluate-fixture:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Evaluate reference predictions
         uses: ./.github/actions/evaluate
         with:
