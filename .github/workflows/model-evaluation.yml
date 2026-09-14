@@ -1,0 +1,24 @@
+name: Model Evaluation Gate
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'examples/**'
+      - 'python/anqor_benchmark/**'
+      - '.github/actions/evaluate/**'
+
+permissions:
+  contents: read
+
+jobs:
+  evaluate-fixture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Evaluate reference predictions
+        uses: ./.github/actions/evaluate
+        with:
+          predictions: examples/predictions.csv
+          threshold: '0.5'
+          gate: '{"f1":{"min":0.75},"pr_auc":{"min":0.70},"ece":{"max":0.20}}'
