@@ -1,4 +1,4 @@
-"""ModelFort-compatible, framework-neutral ML evaluation primitives."""
+"""Framework-neutral ML evaluation primitives for Anqor."""
 
 from .drift import psi
 from .gates import GateResult, evaluate_gate
