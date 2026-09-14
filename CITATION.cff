@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+title: "Anqor"
+message: "If you use Anqor in research or software, please cite this project."
+type: software
+authors:
+  - family-names: Watma
+    given-names: Divyansh
+    orcid: ""
+repository-code: "https://github.com/DivyanshWatma29/Anqor"
+license: MIT
+version: "0.1.0"
+date-released: "2026-09-14"
+abstract: "Open, reproducible tooling for explainable tabular fraud-risk model evaluation."
+keywords:
+  - machine-learning
+  - fraud-detection
+  - explainable-ai
+  - model-evaluation
+  - insurance
+  - responsible-ai
