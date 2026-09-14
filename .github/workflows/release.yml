@@ -1,0 +1,40 @@
+name: Release Benchmark Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --upgrade pip build
+      - run: python -m build python/anqor_benchmark
+      - uses: actions/upload-artifact@v4
+        with:
+          name: modelfort-benchmark-dist
+          path: python/anqor_benchmark/dist/*
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: ${{ vars.MODelfORT_PUBLISH == 'true' }}
+    permissions:
+      id-token: write
+    environment: pypi
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: modelfort-benchmark-dist
+          path: dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
