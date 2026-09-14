@@ -3,13 +3,13 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "modelfort-benchmark"
+name = "anqor-benchmark"
 version = "0.1.0"
-description = "Framework-neutral ML evaluation and release gates for production systems."
+description = "Framework-neutral ML evaluation and release gates for Anqor."
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{name = "Divyansh Watma"}]
-license = {file = "../../LICENSE"}
+license = {text = "MIT"}
 keywords = ["machine-learning", "mlops", "model-evaluation", "responsible-ai", "drift", "calibration", "release-gate"]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -21,7 +21,7 @@ classifiers = [
 dependencies = []
 
 [project.scripts]
-modelfort = "anqor_benchmark.cli:main"
+anqor = "anqor_benchmark.cli:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
