@@ -1,23 +1,33 @@
-"""Additional framework-neutral metrics for ML release assurance."""
+"""Additional framework-neutral metrics for ML evaluation."""
 
-from math import log, sqrt
+from math import isfinite, log
 from typing import Sequence
 
 
-def roc_auc(y_true: Sequence[int], y_score: Sequence[float]) -> float:
+def _validate_inputs(y_true: Sequence[int], y_score: Sequence[float]) -> None:
     if len(y_true) != len(y_score) or not y_true:
         raise ValueError("y_true and y_score must have the same non-zero length")
+    if any(label not in (0, 1) for label in y_true):
+        raise ValueError("y_true must contain only 0 and 1")
+    if any((not isfinite(float(score))) or not 0.0 <= float(score) <= 1.0 for score in y_score):
+        raise ValueError("y_score values must be finite values between 0 and 1")
+
+
+def roc_auc(y_true: Sequence[int], y_score: Sequence[float]) -> float:
+    """Compute ROC-AUC using average ranks for tied scores."""
+    _validate_inputs(y_true, y_score)
     positives = sum(1 for y in y_true if y == 1)
-    negatives = sum(1 for y in y_true if y == 0)
+    negatives = len(y_true) - positives
     if positives == 0 or negatives == 0:
-        return 0.5
+        raise ValueError("roc_auc requires both positive and negative labels")
+
     order = sorted(range(len(y_score)), key=lambda i: float(y_score[i]))
     rank_sum = 0.0
     rank = 1
     i = 0
     while i < len(order):
         j = i + 1
-        while j < len(order) and y_score[order[j]] == y_score[order[i]]:
+        while j < len(order) and float(y_score[order[j]]) == float(y_score[order[i]]):
             j += 1
         avg_rank = (rank + rank + (j - i) - 1) / 2
         rank_sum += sum(avg_rank for k in order[i:j] if y_true[k] == 1)
@@ -27,14 +37,15 @@ def roc_auc(y_true: Sequence[int], y_score: Sequence[float]) -> float:
 
 
 def pr_auc(y_true: Sequence[int], y_score: Sequence[float]) -> float:
-    if len(y_true) != len(y_score) or not y_true:
-        raise ValueError("y_true and y_score must have the same non-zero length")
+    """Compute step-wise precision-recall area (average-precision style)."""
+    _validate_inputs(y_true, y_score)
     positives = sum(1 for y in y_true if y == 1)
     if positives == 0:
-        return 0.0
+        raise ValueError("pr_auc requires at least one positive label")
+
     order = sorted(range(len(y_score)), key=lambda i: float(y_score[i]), reverse=True)
     tp = fp = 0
-    prev_recall = 0.0
+    previous_recall = 0.0
     area = 0.0
     for i in order:
         if y_true[i] == 1:
@@ -43,28 +54,35 @@ def pr_auc(y_true: Sequence[int], y_score: Sequence[float]) -> float:
             fp += 1
         recall = tp / positives
         precision = tp / (tp + fp)
-        area += (recall - prev_recall) * precision
-        prev_recall = recall
+        area += (recall - previous_recall) * precision
+        previous_recall = recall
     return area
 
 
 def brier_score(y_true: Sequence[int], y_score: Sequence[float]) -> float:
-    if len(y_true) != len(y_score) or not y_true:
-        raise ValueError("y_true and y_score must have the same non-zero length")
-    return sum((float(s) - int(y)) ** 2 for y, s in zip(y_true, y_score)) / len(y_true)
+    """Compute mean squared probability error."""
+    _validate_inputs(y_true, y_score)
+    return sum((float(score) - int(label)) ** 2 for label, score in zip(y_true, y_score)) / len(y_true)
 
 
-def expected_calibration_error(y_true: Sequence[int], y_score: Sequence[float], bins: int = 10) -> float:
+def expected_calibration_error(
+    y_true: Sequence[int], y_score: Sequence[float], bins: int = 10
+) -> float:
+    """Compute equal-width expected calibration error over score bins."""
+    _validate_inputs(y_true, y_score)
     if bins < 1:
         raise ValueError("bins must be at least 1")
-    if len(y_true) != len(y_score) or not y_true:
-        raise ValueError("y_true and y_score must have the same non-zero length")
+
     total = len(y_true)
     error = 0.0
     for bucket in range(bins):
         lo = bucket / bins
         hi = (bucket + 1) / bins
-        members = [i for i, s in enumerate(y_score) if lo <= float(s) < hi or (bucket == bins - 1 and float(s) == 1.0)]
+        members = [
+            i
+            for i, score in enumerate(y_score)
+            if lo <= float(score) < hi or (bucket == bins - 1 and float(score) == 1.0)
+        ]
         if not members:
             continue
         confidence = sum(float(y_score[i]) for i in members) / len(members)
@@ -73,11 +91,15 @@ def expected_calibration_error(y_true: Sequence[int], y_score: Sequence[float], 
     return error
 
 
-def safe_log_loss(y_true: Sequence[int], y_score: Sequence[float], eps: float = 1e-15) -> float:
-    if len(y_true) != len(y_score) or not y_true:
-        raise ValueError("y_true and y_score must have the same non-zero length")
+def safe_log_loss(
+    y_true: Sequence[int], y_score: Sequence[float], eps: float = 1e-15
+) -> float:
+    """Compute binary log loss with probability clipping."""
+    _validate_inputs(y_true, y_score)
+    if not 0.0 < eps < 0.5:
+        raise ValueError("eps must be between 0 and 0.5")
     loss = 0.0
-    for y, score in zip(y_true, y_score):
-        p = min(max(float(score), eps), 1.0 - eps)
-        loss -= int(y) * log(p) + (1 - int(y)) * log(1 - p)
+    for label, score in zip(y_true, y_score):
+        probability = min(max(float(score), eps), 1.0 - eps)
+        loss -= int(label) * log(probability) + (1 - int(label)) * log(1 - probability)
     return loss / len(y_true)
