@@ -1,140 +1,129 @@
 # Anqor
 
-An AI-powered insurance fraud detection platform that uses 5 specialised XGBoost models to identify fraudulent claims across Auto, Health, Travel, Life, and Property insurance — and explains **why** each claim was flagged.
+**Open, reproducible tooling for explainable tabular fraud-risk models.**
 
-## Why This Exists
+Anqor is an open-source reference stack for building, evaluating, and operating machine-learning systems that flag suspicious financial or insurance claims. It combines a production-style web application with a small, provider-neutral Python evaluation toolkit so developers can measure model quality, threshold trade-offs, subgroup performance, and calibration before deployment.
 
-Insurance fraud costs the industry **$80+ billion annually**. Traditional claim review is manual, slow, and inconsistent. Anqor automates this process — an adjuster can input claim details, upload a document, or batch-process an entire CSV, and get an instant fraud probability score backed by trained ML models, with a structured explanation of what triggered the flag.
+> Anqor is a research and engineering toolkit. It is not a substitute for human investigation, regulatory review, or professional insurance decisions.
 
-## What It Does
+[![CI](https://github.com/DivyanshWatma29/Anqor/actions/workflows/ci.yml/badge.svg)](https://github.com/DivyanshWatma29/Anqor/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](python/anqor_benchmark/pyproject.toml)
 
-- **Single Claim Prediction** — Fill in claim details through a guided form for any of the 5 insurance types. The system returns a fraud probability, risk level, fraud explanation with categorised reasons, and SHAP feature importance.
-- **"Why Is This Fraud?"** — Every prediction includes a plain-English explanation: financial red flags, behavioral patterns, missing documentation, temporal anomalies, and ML-identified statistical signals — each with severity ratings and actionable recommendations.
-- **Document AI Extraction** — Upload a claim PDF or image. GPT-4o-mini extracts structured fields automatically, auto-detects the insurance category, and pre-fills the prediction form.
-- **Bulk CSV Processing** — Upload CSV/Excel files with up to 5,000 claims for batch fraud analysis with exportable CSV/PDF results.
-- **Analytics Dashboard** — Visualize fraud trends, claim distributions, and risk breakdowns with interactive charts.
-- **Guest Mode** — All prediction features work without an account. Auth unlocks saved history and dashboards.
+## Why Anqor exists
 
-## How It Works
+Fraud datasets are usually treated as ordinary binary-classification problems even though production systems have asymmetric costs, changing prevalence, imperfect labels, and fairness requirements. Anqor provides a transparent evaluation layer around those realities.
 
-```
-┌─────────────────┐     ┌──────────────────┐     ┌────────────────────┐
-│  React Frontend │────▶│  Flask ML Service │────▶│  5× XGBoost Models │
-│  (Vite + TS)    │     │  (scikit-learn)   │     │  + Fraud Explainer │
-└────────┬────────┘     └──────────────────┘     └────────────────────┘
-         │
-         ├──▶ InsForge (Auth + PostgreSQL)
-         └──▶ InsForge AI Gateway (GPT-4o-mini for Document AI)
-```
+The project has two parts:
 
-1. User submits claim data (manual form, document upload, or CSV)
-2. Frontend sends features to the Flask ML API
-3. XGBoost pipeline returns fraud probability + SHAP importance
-4. Explainer module generates structured reasons (rule-based + ML-based)
-5. Results displayed with risk meter, categorised explanations, and recommendations
+1. **Anqor app** — a reference application for insurance-claim fraud analysis with prediction, bulk processing, dashboards, and explainability.
+2. **Anqor Benchmark** — a lightweight Python toolkit for evaluating predictions independently of the web application or model provider.
 
-## Model Performance
+The benchmark layer is deliberately dependency-light so it can be reused with scikit-learn, XGBoost, LightGBM, PyTorch, or custom models.
 
-| Model | F1 Score | AUC-ROC | Training Data |
-|-------|----------|---------|---------------|
-| Health | **0.994** | **0.999** | 10,000 claims |
-| Property | **0.936** | 0.906 | 5,000 claims |
-| Life | 0.882 | 0.721 | 5,000 claims |
-| Travel | 0.864 | 0.813 | 63,326 claims |
-| Auto | 0.809 | 0.833 | 1,000 claims |
+## Benchmark capabilities
 
-## Tech Stack
+- Precision, recall, F1, specificity, balanced accuracy, and MCC
+- ROC-AUC and PR-AUC when probability scores are available
+- Threshold sweeps and operating-point selection
+- Expected-cost analysis for asymmetric false-positive/false-negative costs
+- Calibration error and reliability statistics
+- Optional subgroup evaluation using user-supplied group columns
+- Machine-readable JSON reports for CI and experiment tracking
+- Deterministic, tested metric calculations
 
-| Layer | Technology |
-|-------|-----------:|
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Framer Motion |
-| ML Service | Python 3.10, Flask, scikit-learn 1.7.2, XGBoost, pandas, NumPy |
-| Auth & DB | InsForge (Supabase-compatible PostgreSQL BaaS) |
-| Document AI | GPT-4o-mini via InsForge AI Gateway |
-| Charts | Recharts |
-| Data Fetching | TanStack React Query |
-| Deployment | Vercel (frontend), Hugging Face Spaces Docker (ML API) |
+## Example
 
-## Project Structure
+```python
+from anqor_benchmark import evaluate_binary_classifier
 
-```
-fraud.ai/
-├── src/                          # React frontend
-│   ├── pages/                    # Route-level components
-│   ├── components/               # Reusable UI (ClaimForm, PredictionResult, RiskMeter...)
-│   │   └── ui/                   # shadcn/ui primitives
-│   ├── schemas/
-│   │   └── insuranceTypes.ts     # Source of truth for all form fields
-│   ├── lib/                      # API clients, Document AI, utilities
-│   ├── contexts/                 # Auth context
-│   └── hooks/
-├── ml-service/                   # Python ML backend
-│   ├── app.py                    # Flask API (v3.1) — 20+ endpoints
-│   ├── core/                     # preprocessor, indicators, explainer, SHAP, PDF
-│   ├── models/                   # 5× trained pipelines (.joblib) + feature configs
-│   ├── scripts/                  # Training & upload scripts
-│   └── Dockerfile                # HF Spaces deployment
-├── public/                       # Static assets (sample CSV, fonts)
-└── CLAUDE.md                     # AI assistant project context
+report = evaluate_binary_classifier(
+    y_true=[0, 0, 1, 1, 1],
+    y_score=[0.10, 0.30, 0.55, 0.80, 0.95],
+    threshold=0.50,
+    positive_label=1,
+)
+
+print(report.metrics["f1"])
+print(report.metrics["pr_auc"])
 ```
 
-## User Walkthrough
+See [`examples/evaluate_predictions.py`](examples/evaluate_predictions.py) for a complete example.
 
-1. **Predict Claim** — Select insurance type (Auto, Health, Travel, Life, Property). Fill in claim fields. Hit "Analyze Claim" → get fraud probability, risk level, categorised reasons, and SHAP feature importance.
-2. **Upload Document** — Upload a claim PDF or image. GPT-4o-mini extracts fields automatically and pre-fills the form. Review and submit.
-3. **Bulk Check** — Upload a CSV/Excel file with up to 5,000 claims. Get batch fraud predictions with exportable CSV/PDF results.
-4. **Dashboard** — View fraud trends, claim distributions, and risk breakdowns (requires login).
+## Repository structure
 
-## Getting Started
+```text
+.
+├── python/
+│   └── anqor_benchmark/       # reusable evaluation toolkit
+│       ├── anqor_benchmark/
+│       ├── tests/
+│       └── pyproject.toml
+├── examples/                   # reproducible usage examples
+├── docs/                       # benchmark methodology and threat model
+├── .github/                    # CI, issue forms, PR workflow
+├── ml-service/                 # existing reference ML service
+├── api/                        # application API entrypoint
+└── src/                        # React application
+```
 
-### Prerequisites
+## Getting started
 
-- Node.js v18+
-- Python 3.10+
-
-### 1. Clone the repository
+### Benchmark toolkit
 
 ```bash
-git clone https://github.com/DivyanshWatma29/fraud-shield-ai.git
-cd fraud-shield-ai
+cd python/anqor_benchmark
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -e '.[dev]'
+pytest
 ```
 
-### 2. Set up environment variables
+### Existing web application
 
-Create a `.env` file in the project root:
+The application requires Node.js 18+ and Python 3.10+. See [`DEPLOYMENT.md`](DEPLOYMENT.md) for deployment configuration and the environment-variable examples in the repository.
 
-```env
-VITE_INSFORGE_URL=<your-insforge-project-url>
-VITE_INSFORGE_ANON_KEY=<your-insforge-anon-key>
-VITE_ML_SERVICE_URL=http://localhost:5000
-```
+## Design principles
 
-### 3. Start the frontend
+**Reproducibility.** Every benchmark result should be explainable from its inputs, metric definitions, and threshold.
 
-```bash
-npm install
-npm run dev
-```
+**Model-provider neutrality.** The evaluation layer accepts predictions and scores rather than depending on one ML framework.
 
-The app will be available at `http://localhost:8081`.
+**Human oversight.** Fraud scores are decision-support signals; they should not become automatic adverse decisions without appropriate review.
 
-### 4. Start the ML service
+**Security by default.** Secrets stay outside source control, uploads are validated, dependencies are continuously checked, and security reports have a documented disclosure path.
 
-```bash
-cd ml-service
-python3 -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-python3 app.py
-```
+**Contributor friendliness.** Small issues should be independently actionable, tests should run in CI, and significant behavior changes should be documented.
 
-The ML API will be available at `http://localhost:5000`.
+## Documentation
 
-## Deployment
+- [Benchmark methodology](docs/benchmark.md)
+- [Threat model](docs/threat-model.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Changelog](CHANGELOG.md)
+- [Citation](CITATION.cff)
 
-- **Frontend** is deployed on Vercel with automatic builds from the `master` branch.
-- **ML Service** is containerized and deployed on Hugging Face Spaces using the included Dockerfile.
+## Roadmap
+
+- [x] Core binary-classification metrics
+- [x] Threshold and cost evaluation
+- [x] Calibration statistics
+- [x] JSON evaluation reports
+- [ ] Dataset quality checks and schema validation
+- [ ] Drift and temporal-slice evaluation
+- [ ] Fairness metrics with explicit group definitions
+- [ ] Model-card generation
+- [ ] CLI: `anqor evaluate predictions.csv`
+- [ ] Public benchmark datasets and baseline results
+
+Roadmap items are intentionally tracked as issues so contributors can propose implementations and discuss scope before coding.
+
+## Contributing
+
+Anqor is maintained as an open-source project. Bug reports, documentation improvements, benchmark methodology reviews, tests, and code contributions are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## License
 
-This project was built as part of an academic course on Insurance & Security Systems.
+Anqor is released under the [MIT License](LICENSE).
