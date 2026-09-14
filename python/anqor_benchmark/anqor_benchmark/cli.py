@@ -3,7 +3,9 @@
 import argparse
 import csv
 import json
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 from .gates import evaluate_gate
 from .metrics import evaluate_binary_classifier
@@ -13,16 +15,47 @@ from .report import build_report, write_json
 
 def _read_predictions(path: str) -> tuple[list[int], list[float]]:
     """Read a CSV containing y_true and y_score columns."""
-    with Path(path).open(newline="", encoding="utf-8") as handle:
-        rows = list(csv.DictReader(handle))
-    if not rows or not {"y_true", "y_score"}.issubset(rows[0]):
-        raise ValueError("CSV must contain y_true and y_score columns")
-    try:
-        y_true = [int(row["y_true"]) for row in rows]
-        y_score = [float(row["y_score"]) for row in rows]
-    except (TypeError, ValueError) as exc:
-        raise ValueError("y_true must be integers and y_score must be numbers") from exc
+    input_path = Path(path)
+    if not input_path.is_file():
+        raise FileNotFoundError(input_path)
+    with input_path.open(newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        if not reader.fieldnames or not {"y_true", "y_score"}.issubset(reader.fieldnames):
+            raise ValueError("CSV must contain y_true and y_score columns")
+        rows = list(reader)
+
+    if not rows:
+        raise ValueError("CSV must contain at least one prediction row")
+
+    y_true: list[int] = []
+    y_score: list[float] = []
+    for line_number, row in enumerate(rows, start=2):
+        try:
+            y_true.append(int(row["y_true"]))
+            y_score.append(float(row["y_score"]))
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"invalid y_true/y_score values on CSV line {line_number}") from exc
     return y_true, y_score
+
+
+def _load_gate(raw: str | None, gate_file: str | None) -> Mapping[str, Mapping[str, float]] | None:
+    if raw and gate_file:
+        raise ValueError("use either --gate or --gate-file, not both")
+    if gate_file:
+        path = Path(gate_file)
+        if not path.is_file():
+            raise FileNotFoundError(path)
+        data: Any = json.loads(path.read_text(encoding="utf-8"))
+    elif raw:
+        data = json.loads(raw)
+    else:
+        return None
+
+    if not isinstance(data, dict) or any(
+        not isinstance(policy, dict) for policy in data.values()
+    ):
+        raise ValueError("gate policy must be a JSON object mapping metric names to rule objects")
+    return data
 
 
 def main() -> int:
@@ -41,8 +74,9 @@ def main() -> int:
     evaluate.add_argument("--json", dest="json_path")
     evaluate.add_argument(
         "--gate",
-        help='JSON rules, e.g. {"f1":{"min":0.8},"pr_auc":{"min":0.7}}',
+        help='Inline JSON rules, e.g. {"f1":{"min":0.8},"pr_auc":{"min":0.7}}',
     )
+    evaluate.add_argument("--gate-file", help="Path to a JSON gate-policy file")
     args = parser.parse_args()
 
     if args.command != "evaluate":
@@ -67,8 +101,9 @@ def main() -> int:
     )
     report = build_report(result, metadata={"rows": len(y_true), "input": args.csv})
 
-    if args.gate:
-        gate = evaluate_gate(metrics, json.loads(args.gate))
+    gate_policy = _load_gate(args.gate, args.gate_file)
+    if gate_policy is not None:
+        gate = evaluate_gate(metrics, gate_policy)
         report["gate"] = gate.to_dict()
         if not gate.passed:
             print(json.dumps(report, indent=2, sort_keys=True))

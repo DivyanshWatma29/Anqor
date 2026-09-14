@@ -9,7 +9,7 @@ description = "Framework-neutral ML evaluation and release gates for Anqor."
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{name = "Divyansh Watma"}]
-license = {text = "MIT"}
+license = "MIT"
 keywords = ["machine-learning", "mlops", "model-evaluation", "responsible-ai", "drift", "calibration", "release-gate"]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -19,6 +19,11 @@ classifiers = [
   "Programming Language :: Python :: 3 :: Only",
 ]
 dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/DivyanshWatma29/Anqor"
+Repository = "https://github.com/DivyanshWatma29/Anqor"
+Issues = "https://github.com/DivyanshWatma29/Anqor/issues"
 
 [project.scripts]
 anqor = "anqor_benchmark.cli:main"

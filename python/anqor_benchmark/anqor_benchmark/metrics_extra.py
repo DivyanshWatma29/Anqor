@@ -37,7 +37,7 @@ def roc_auc(y_true: Sequence[int], y_score: Sequence[float]) -> float:
 
 
 def pr_auc(y_true: Sequence[int], y_score: Sequence[float]) -> float:
-    """Compute step-wise precision-recall area (average-precision style)."""
+    """Compute step-wise precision-recall area using score-tied groups."""
     _validate_inputs(y_true, y_score)
     positives = sum(1 for y in y_true if y == 1)
     if positives == 0:
@@ -47,15 +47,24 @@ def pr_auc(y_true: Sequence[int], y_score: Sequence[float]) -> float:
     tp = fp = 0
     previous_recall = 0.0
     area = 0.0
-    for i in order:
-        if y_true[i] == 1:
-            tp += 1
-        else:
-            fp += 1
+    index = 0
+    while index < len(order):
+        end = index + 1
+        score = float(y_score[order[index]])
+        while end < len(order) and float(y_score[order[end]]) == score:
+            end += 1
+
+        for position in order[index:end]:
+            if y_true[position] == 1:
+                tp += 1
+            else:
+                fp += 1
+
         recall = tp / positives
         precision = tp / (tp + fp)
         area += (recall - previous_recall) * precision
         previous_recall = recall
+        index = end
     return area
 
 

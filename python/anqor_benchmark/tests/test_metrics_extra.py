@@ -26,6 +26,10 @@ def test_pr_auc_perfect_ranked():
     assert pr_auc([0, 0, 1, 1], [0.1, 0.2, 0.8, 0.9]) == 1.0
 
 
+def test_pr_auc_groups_tied_scores():
+    assert pr_auc([1, 0, 1, 0], [0.5, 0.5, 0.2, 0.1]) == pytest.approx(7 / 12)
+
+
 def test_brier_score_zero_for_perfect_probabilities():
     assert brier_score([0, 1], [0.0, 1.0]) == 0.0
 

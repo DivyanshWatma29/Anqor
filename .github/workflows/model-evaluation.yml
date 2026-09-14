@@ -21,4 +21,4 @@ jobs:
         with:
           predictions: examples/predictions.csv
           threshold: '0.5'
-          gate: '{"f1":{"min":0.75},"pr_auc":{"min":0.70},"ece":{"max":0.20}}'
+          gate-file: examples/release-policy.json

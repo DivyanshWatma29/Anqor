@@ -13,7 +13,11 @@ inputs:
     required: false
     default: '0.5'
   gate:
-    description: JSON metric gate, for example {"f1":{"min":0.75}}
+    description: Inline JSON metric gate, for example {"f1":{"min":0.75}}
+    required: false
+    default: ''
+  gate-file:
+    description: Path to a JSON gate-policy file in the checked-out repository
     required: false
     default: ''
 runs:
@@ -25,15 +29,23 @@ runs:
     - shell: bash
       run: |
         python -m pip install --upgrade pip
-        pip install -e ./python/anqor_benchmark
+        python -m pip install -e ./python/anqor_benchmark
     - shell: bash
       env:
         PREDICTIONS: ${{ inputs.predictions }}
         THRESHOLD: ${{ inputs.threshold }}
         GATE: ${{ inputs.gate }}
+        GATE_FILE: ${{ inputs.gate-file }}
       run: |
+        args=(anqor evaluate "$PREDICTIONS" --threshold "$THRESHOLD")
         if [ -n "$GATE" ]; then
-          anqor evaluate "$PREDICTIONS" --threshold "$THRESHOLD" --gate "$GATE"
-        else
-          anqor evaluate "$PREDICTIONS" --threshold "$THRESHOLD"
+          args+=(--gate "$GATE")
         fi
+        if [ -n "$GATE_FILE" ]; then
+          args+=(--gate-file "$GATE_FILE")
+        fi
+        if [ -n "$GATE" ] && [ -n "$GATE_FILE" ]; then
+          echo "gate and gate-file are mutually exclusive" >&2
+          exit 1
+        fi
+        "${args[@]}"
